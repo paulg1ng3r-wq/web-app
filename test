@@ -1,0 +1,450 @@
+import { useState, useRef, useMemo } from "react";
+
+const VERSION = "v1.03";
+
+const CHANGELOG = [
+  { version:"v1.03", items:["Onderste navigatiebalk (Taken, Kalender, Sjablonen, Instellingen)","6 thema's: Donker, Licht, Oranje, Mint, Blauw, Roze","Kalenderweergave met gekleurde taak-stippen","Sjablonentabblad: standaard taken met eigen kleur snel toevoegen","Uitvouwbare versiegeschiedenis in Instellingen"] },
+  { version:"v1.02", items:["Tijdveld per taak","Apple SF Pro lettertype","Export alle taken als JSON","Import taken vanuit JSON-bestand","Versienummer linksboven"] },
+  { version:"v1.01", items:["Eerste versie van de takenlijst","Taken toevoegen met dag & deadline","Prioriteit (Laag / Normaal / Hoog)","Filteren op Vandaag / Open / Gedaan","Afvinken en verwijderen van taken"] },
+];
+
+const THEMES = {
+  donker:  { name:"🌑 Donker",  bg:"#0f0f14", card:"#1a1a26", border:"#2a2a3a", text:"#f0e6d3", sub:"#7a7a8a", accent:"#c9a96e", navBg:"#13131c", inputBg:"#0f0f14", muted:"#2e2e3e", badge:"#1e1e2a" },
+  licht:   { name:"☀️ Licht",   bg:"#f5f5f0", card:"#ffffff", border:"#e0e0d8", text:"#1a1a2e", sub:"#8888a0", accent:"#5a5aaa", navBg:"#ebebE4", inputBg:"#f9f9f5", muted:"#c8c8d0", badge:"#eeeeea" },
+  oranje:  { name:"🔥 Oranje",  bg:"#0f0f14", card:"#1a1a26", border:"#2a2a3a", text:"#f0e6d3", sub:"#7a7a8a", accent:"#ff7a2f", navBg:"#13131c", inputBg:"#0f0f14", muted:"#2e2e3e", badge:"#1e1e2a" },
+  mint:    { name:"🌿 Mint",    bg:"#f0f7f4", card:"#ffffff", border:"#c8e6d8", text:"#1a2e26", sub:"#70998a", accent:"#2e9e6e", navBg:"#e4f0ea", inputBg:"#f5fbf8", muted:"#b8d8c8", badge:"#e8f5ee" },
+  blauw:   { name:"🩵 Blauw",  bg:"#e8f2ff", card:"#ffffff", border:"#b8d4f8", text:"#1a2a4a", sub:"#7090b8", accent:"#4a90d9", navBg:"#d8eaff", inputBg:"#f0f7ff", muted:"#b0ccea", badge:"#dceeff" },
+  roze:    { name:"🌸 Roze",   bg:"#fff0f5", card:"#ffffff", border:"#f8c8da", text:"#3a1a2a", sub:"#b888a0", accent:"#e05080", navBg:"#ffe4ee", inputBg:"#fff5f8", muted:"#f0c0d0", badge:"#ffe8f0" },
+};
+
+const PRIORITIES = ["Laag","Normaal","Hoog"];
+const PRIO_COLORS = { Laag:"#66bb6a", Normaal:"#ffca28", Hoog:"#ef5350" };
+
+const SF = `'SF Pro Display','SF Pro Text',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif`;
+const TODAY = new Date().toISOString().split("T")[0];
+
+function getDaysLeft(d) {
+  const t=new Date(); t.setHours(0,0,0,0);
+  const x=new Date(d+"T00:00:00"); x.setHours(0,0,0,0);
+  return Math.round((x-t)/86400000);
+}
+
+function DeadlineBadge({deadline,time,th}) {
+  if(!deadline) return null;
+  const days=getDaysLeft(deadline);
+  let bg,color,label;
+  if(days<0)     {bg="#fce4ec";color="#c62828";label=`${Math.abs(days)}d te laat`;}
+  else if(days===0){bg="#fff3e0";color="#e65100";label="Vandaag!";}
+  else if(days===1){bg="#fff8e1";color="#f57f17";label="Morgen";}
+  else            {bg="#e8f5e9";color="#2e7d32";label=`${days}d over`;}
+  return <span style={{background:bg,color,borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:600,whiteSpace:"nowrap"}}>{label}{time?` · ${time}`:""}</span>;
+}
+
+const DEFAULT_TEMPLATES = [
+  {id:1,text:"Boodschappen doen",priority:"Normaal",color:"#2e9e6e",emoji:"🛒"},
+  {id:2,text:"Sport / bewegen",priority:"Normaal",color:"#4a90d9",emoji:"🏃"},
+  {id:3,text:"Medicijnen innemen",priority:"Hoog",color:"#ef5350",emoji:"💊"},
+  {id:4,text:"E-mails beantwoorden",priority:"Normaal",color:"#ffca28",emoji:"📧"},
+  {id:5,text:"Huis opruimen",priority:"Laag",color:"#b888a0",emoji:"🧹"},
+];
+
+export default function App() {
+  const [tasks,setTasks]           = useState([
+    {id:1,text:"Boodschappen doen",deadline:TODAY,time:"12:00",priority:"Normaal",done:false,day:TODAY,color:"#2e9e6e"},
+    {id:2,text:"Project rapport",  deadline:new Date(Date.now()+2*86400000).toISOString().split("T")[0],time:"17:00",priority:"Hoog",done:false,day:TODAY,color:null},
+  ]);
+  const [templates,setTemplates]   = useState(DEFAULT_TEMPLATES);
+  const [tab,setTab]               = useState("taken");
+  const [filter,setFilter]         = useState("Alles");
+  const [themeKey,setThemeKey]     = useState("donker");
+  const [showForm,setShowForm]     = useState(false);
+  const [editId,setEditId]         = useState(null);
+  const [form,setForm]             = useState({text:"",deadline:TODAY,time:"",priority:"Normaal",day:TODAY,color:""});
+  const [toast,setToast]           = useState(null);
+  const [calMonth,setCalMonth]     = useState(new Date());
+  const [showChangelog,setShowChangelog] = useState(false);
+  const [editTpl,setEditTpl]       = useState(null);
+  const [tplForm,setTplForm]       = useState({text:"",priority:"Normaal",color:"#4a90d9",emoji:"⭐"});
+  const [showTplForm,setShowTplForm] = useState(false);
+  const importRef = useRef();
+  const th = THEMES[themeKey];
+
+  function toast2(m){setToast(m);setTimeout(()=>setToast(null),2500);}
+
+  const filtered = tasks.filter(t=>{
+    if(filter==="Vandaag") return t.day===TODAY;
+    if(filter==="Gedaan")  return t.done;
+    if(filter==="Open")    return !t.done;
+    return true;
+  }).sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    return PRIORITIES.indexOf(b.priority)-PRIORITIES.indexOf(a.priority);
+  });
+
+  function addOrEdit(){
+    if(!form.text.trim()) return;
+    if(editId!==null){setTasks(tasks.map(t=>t.id===editId?{...t,...form}:t));setEditId(null);}
+    else setTasks([...tasks,{...form,id:Date.now(),done:false}]);
+    setForm({text:"",deadline:TODAY,time:"",priority:"Normaal",day:TODAY,color:""});
+    setShowForm(false);
+  }
+  function startEdit(task){setForm({text:task.text,deadline:task.deadline,time:task.time||"",priority:task.priority,day:task.day,color:task.color||""});setEditId(task.id);setShowForm(true);}
+  function toggle(id){setTasks(tasks.map(t=>t.id===id?{...t,done:!t.done}:t));}
+  function remove(id){setTasks(tasks.filter(t=>t.id!==id));}
+
+  function addFromTemplate(tpl){
+    setTasks([...tasks,{id:Date.now(),text:tpl.text,deadline:TODAY,time:"",priority:tpl.priority,done:false,day:TODAY,color:tpl.color}]);
+    toast2(`✅ "${tpl.text}" toegevoegd!`);
+  }
+
+  function exportTasks(){
+    const blob=new Blob([JSON.stringify({version:VERSION,exported:new Date().toISOString(),tasks},null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`taken-${TODAY}.json`;a.click();URL.revokeObjectURL(url);
+    toast2("✅ Geëxporteerd!");
+  }
+  function importTasks(e){
+    const file=e.target.files[0];if(!file)return;
+    const r=new FileReader();
+    r.onload=ev=>{try{const d=JSON.parse(ev.target.result);const imp=Array.isArray(d)?d:(d.tasks||[]);if(!imp.length)throw 0;setTasks(imp);toast2(`✅ ${imp.length} taken geladen!`);}catch{toast2("❌ Ongeldig bestand");}};
+    r.readAsText(file);e.target.value="";
+  }
+
+  // Calendar helpers
+  const calDays = useMemo(()=>{
+    const y=calMonth.getFullYear(),m=calMonth.getMonth();
+    const first=new Date(y,m,1).getDay(); // 0=sun
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const startOffset=(first+6)%7; // Mon=0
+    const cells=[];
+    for(let i=0;i<startOffset;i++) cells.push(null);
+    for(let d=1;d<=daysInMonth;d++) cells.push(d);
+    return {cells,y,m};
+  },[calMonth]);
+
+  function tasksForDay(d){
+    if(!d) return [];
+    const {y,m}=calDays;
+    const dateStr=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    return tasks.filter(t=>t.day===dateStr||t.deadline===dateStr);
+  }
+
+  const inp={background:th.inputBg,border:`1px solid ${th.border}`,borderRadius:8,padding:"10px 14px",color:th.text,fontSize:14,fontFamily:SF,outline:"none",width:"100%",boxSizing:"border-box"};
+
+  const navItems=[
+    {key:"taken",   icon:"✅", label:"Taken"},
+    {key:"kalender",icon:"📅", label:"Kalender"},
+    {key:"sjablonen",icon:"⚡",label:"Sjablonen"},
+    {key:"instellingen",icon:"⚙️",label:"Instellingen"},
+  ];
+
+  return (
+    <div style={{minHeight:"100vh",background:th.bg,fontFamily:SF,display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(0.4);cursor:pointer;}
+        button{transition:all .15s;} button:active{transform:scale(0.96);}
+        ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:${th.border};border-radius:4px;}
+      `}</style>
+
+      {toast&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:th.card,border:`1px solid ${th.border}`,borderRadius:12,padding:"10px 20px",color:th.text,fontSize:13,zIndex:999,boxShadow:"0 8px 32px #0006",fontFamily:SF}}>{toast}</div>}
+
+      <div style={{width:"100%",maxWidth:540,flex:1,padding:"32px 16px 90px",boxSizing:"border-box"}}>
+
+        {/* ── TAKEN TAB ── */}
+        {tab==="taken"&&<>
+          <div style={{marginBottom:24}}>
+            <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                  <span style={{color:th.accent,fontSize:11,letterSpacing:4,textTransform:"uppercase"}}>Takenlijst</span>
+                  <span style={{color:th.muted,fontSize:10,letterSpacing:1,userSelect:"none"}}>{VERSION}</span>
+                </div>
+                <h1 style={{color:th.text,fontSize:34,margin:0,fontWeight:600,letterSpacing:-1}}>Mijn Dag</h1>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{color:th.accent,fontSize:26,fontWeight:700}}>{tasks.filter(t=>!t.done).length}</div>
+                <div style={{color:th.sub,fontSize:10,letterSpacing:2}}>OPEN</div>
+              </div>
+            </div>
+            <div style={{height:1,background:`linear-gradient(90deg,${th.accent}44,transparent)`,marginTop:16}}/>
+          </div>
+
+          {/* Filter + export/import */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,gap:8,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:6}}>
+              {["Alles","Vandaag","Open","Gedaan"].map(f=>(
+                <button key={f} onClick={()=>setFilter(f)} style={{padding:"5px 13px",borderRadius:20,border:"none",cursor:"pointer",fontSize:11,fontFamily:SF,background:filter===f?th.accent:th.badge,color:filter===f?"#fff":th.sub,fontWeight:filter===f?700:400}}>{f}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={exportTasks} style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${th.border}`,background:th.card,color:th.accent,fontSize:11,cursor:"pointer",fontFamily:SF}}>↑ Export</button>
+              <button onClick={()=>importRef.current.click()} style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${th.border}`,background:th.card,color:th.sub,fontSize:11,cursor:"pointer",fontFamily:SF}}>↓ Import</button>
+              <input ref={importRef} type="file" accept=".json" onChange={importTasks} style={{display:"none"}}/>
+            </div>
+          </div>
+
+          {/* Task list */}
+          <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:20}}>
+            {filtered.length===0&&<div style={{color:th.muted,textAlign:"center",padding:"36px 0",fontSize:14}}>Geen taken gevonden</div>}
+            {filtered.map(task=>{
+              const dot=task.color||PRIO_COLORS[task.priority];
+              return(
+                <div key={task.id} style={{background:task.done?th.badge:th.card,border:`1px solid ${task.done?th.border:th.border}`,borderLeft:`3px solid ${task.done?th.border:dot}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"flex-start",gap:12,opacity:task.done?0.5:1}}>
+                  <button onClick={()=>toggle(task.id)} style={{width:21,height:21,borderRadius:"50%",flexShrink:0,marginTop:1,border:`2px solid ${task.done?dot:th.border}`,background:task.done?dot:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {task.done&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                  </button>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:task.done?th.sub:th.text,fontSize:15,fontWeight:500,textDecoration:task.done?"line-through":"none",marginBottom:5,wordBreak:"break-word"}}>{task.text}</div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{background:dot+"22",color:dot,border:`1px solid ${dot}44`,borderRadius:20,padding:"1px 8px",fontSize:10,fontWeight:600}}>{task.priority}</span>
+                      <DeadlineBadge deadline={task.deadline} time={task.time} th={th}/>
+                      {task.day&&<span style={{color:th.sub,fontSize:10}}>📅 {new Date(task.day+"T00:00:00").toLocaleDateString("nl-NL",{day:"numeric",month:"short"})}</span>}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:3,flexShrink:0}}>
+                    <button onClick={()=>startEdit(task)} style={{background:"none",border:"none",color:th.sub,cursor:"pointer",fontSize:13,padding:3}}>✏️</button>
+                    <button onClick={()=>remove(task.id)} style={{background:"none",border:"none",color:th.sub,cursor:"pointer",fontSize:13,padding:3}}>🗑️</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add button */}
+          {!showForm&&<button onClick={()=>{setShowForm(true);setEditId(null);setForm({text:"",deadline:TODAY,time:"",priority:"Normaal",day:TODAY,color:""}); }} style={{width:"100%",padding:13,background:"transparent",border:`2px dashed ${th.border}`,borderRadius:10,color:th.accent,fontSize:14,cursor:"pointer",fontFamily:SF}}>+ Nieuwe taak toevoegen</button>}
+
+          {/* Form */}
+          {showForm&&(
+            <div style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:14,padding:18,display:"flex",flexDirection:"column",gap:13}}>
+              <div style={{color:th.accent,fontSize:10,letterSpacing:2,textTransform:"uppercase"}}>{editId!==null?"Bewerken":"Nieuwe taak"}</div>
+              <input value={form.text} onChange={e=>setForm({...form,text:e.target.value})} placeholder="Wat moet je doen?" onKeyDown={e=>e.key==="Enter"&&addOrEdit()} style={inp}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9}}>
+                <div><div style={{color:th.sub,fontSize:10,marginBottom:4,letterSpacing:1}}>DAG</div><input type="date" value={form.day} onChange={e=>setForm({...form,day:e.target.value})} style={inp}/></div>
+                <div><div style={{color:th.sub,fontSize:10,marginBottom:4,letterSpacing:1}}>DEADLINE</div><input type="date" value={form.deadline} onChange={e=>setForm({...form,deadline:e.target.value})} style={inp}/></div>
+                <div><div style={{color:th.sub,fontSize:10,marginBottom:4,letterSpacing:1}}>TIJD</div><input type="time" value={form.time} onChange={e=>setForm({...form,time:e.target.value})} style={inp}/></div>
+              </div>
+              <div>
+                <div style={{color:th.sub,fontSize:10,marginBottom:6,letterSpacing:1}}>PRIORITEIT</div>
+                <div style={{display:"flex",gap:7}}>
+                  {PRIORITIES.map(p=>{const c=PRIO_COLORS[p];return(
+                    <button key={p} onClick={()=>setForm({...form,priority:p})} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1px solid ${form.priority===p?c:th.border}`,background:form.priority===p?c+"22":"transparent",color:form.priority===p?c:th.sub,cursor:"pointer",fontFamily:SF,fontSize:12,fontWeight:form.priority===p?700:400}}>{p}</button>
+                  );})}
+                </div>
+              </div>
+              <div>
+                <div style={{color:th.sub,fontSize:10,marginBottom:6,letterSpacing:1}}>TAAKKLEUR (optioneel)</div>
+                <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                  {["","#ef5350","#ffca28","#66bb6a","#4a90d9","#e05080","#9c7bd4","#ff7a2f"].map(c=>(
+                    <button key={c} onClick={()=>setForm({...form,color:c})} style={{width:26,height:26,borderRadius:"50%",background:c||th.border,border:form.color===c?`2px solid ${th.text}`:"2px solid transparent",cursor:"pointer",fontSize:c?"0":"10px",color:th.sub}}>{c?"":"✕"}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:9}}>
+                <button onClick={addOrEdit} style={{flex:1,padding:11,background:th.accent,border:"none",borderRadius:8,color:themeKey==="donker"||themeKey==="oranje"?"#0f0f14":"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:SF}}>{editId!==null?"Opslaan":"Toevoegen"}</button>
+                <button onClick={()=>{setShowForm(false);setEditId(null);}} style={{padding:"11px 16px",background:th.badge,border:`1px solid ${th.border}`,borderRadius:8,color:th.sub,fontSize:14,cursor:"pointer",fontFamily:SF}}>Annuleer</button>
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div style={{marginTop:24,display:"flex",justifyContent:"center",gap:20}}>
+            {[["OPEN",tasks.filter(t=>!t.done).length,th.accent],["GEDAAN",tasks.filter(t=>t.done).length,"#66bb6a"],["TOTAAL",tasks.length,th.text]].map(([l,v,c],i,a)=>(
+              <div key={l} style={{display:"flex",alignItems:"center",gap:20}}>
+                <div style={{textAlign:"center"}}><div style={{color:c,fontSize:20,fontWeight:700}}>{v}</div><div style={{color:th.muted,fontSize:9,letterSpacing:2}}>{l}</div></div>
+                {i<a.length-1&&<div style={{width:1,height:24,background:th.border}}/>}
+              </div>
+            ))}
+          </div>
+        </>}
+
+        {/* ── KALENDER TAB ── */}
+        {tab==="kalender"&&<>
+          <div style={{marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{color:th.accent,fontSize:11,letterSpacing:4,textTransform:"uppercase"}}>Kalender</span>
+              <span style={{color:th.muted,fontSize:10}}>{VERSION}</span>
+            </div>
+            <h1 style={{color:th.text,fontSize:30,margin:0,fontWeight:600,letterSpacing:-1}}>Overzicht</h1>
+            <div style={{height:1,background:`linear-gradient(90deg,${th.accent}44,transparent)`,marginTop:14}}/>
+          </div>
+          {/* Month nav */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <button onClick={()=>setCalMonth(new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1))} style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:8,color:th.text,padding:"6px 14px",cursor:"pointer",fontSize:16,fontFamily:SF}}>‹</button>
+            <div style={{color:th.text,fontWeight:600,fontSize:16}}>{calMonth.toLocaleDateString("nl-NL",{month:"long",year:"numeric"})}</div>
+            <button onClick={()=>setCalMonth(new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1))} style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:8,color:th.text,padding:"6px 14px",cursor:"pointer",fontSize:16,fontFamily:SF}}>›</button>
+          </div>
+          {/* Day headers */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
+            {["Ma","Di","Wo","Do","Vr","Za","Zo"].map(d=>(
+              <div key={d} style={{textAlign:"center",color:th.sub,fontSize:11,fontWeight:600,padding:"4px 0"}}>{d}</div>
+            ))}
+          </div>
+          {/* Day cells */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
+            {calDays.cells.map((d,i)=>{
+              const dayTasks=tasksForDay(d);
+              const isToday=d&&`${calDays.y}-${String(calDays.m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`===TODAY;
+              return(
+                <div key={i} style={{minHeight:52,background:isToday?th.accent+"22":d?th.card:"transparent",border:d?`1px solid ${isToday?th.accent:th.border}`:"none",borderRadius:8,padding:"5px 4px",boxSizing:"border-box"}}>
+                  {d&&<>
+                    <div style={{color:isToday?th.accent:th.sub,fontSize:11,fontWeight:isToday?700:400,textAlign:"center",marginBottom:3}}>{d}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:2,justifyContent:"center"}}>
+                      {dayTasks.slice(0,4).map((t,j)=>(
+                        <div key={j} style={{width:7,height:7,borderRadius:"50%",background:t.color||PRIO_COLORS[t.priority],opacity:t.done?0.4:1}} title={t.text}/>
+                      ))}
+                      {dayTasks.length>4&&<div style={{fontSize:8,color:th.sub}}>+{dayTasks.length-4}</div>}
+                    </div>
+                  </>}
+                </div>
+              );
+            })}
+          </div>
+          {/* Legend */}
+          <div style={{marginTop:16,display:"flex",gap:12,flexWrap:"wrap"}}>
+            {Object.entries(PRIO_COLORS).map(([p,c])=>(
+              <div key={p} style={{display:"flex",alignItems:"center",gap:5}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:c}}/>
+                <span style={{color:th.sub,fontSize:11}}>{p}</span>
+              </div>
+            ))}
+          </div>
+        </>}
+
+        {/* ── SJABLONEN TAB ── */}
+        {tab==="sjablonen"&&<>
+          <div style={{marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{color:th.accent,fontSize:11,letterSpacing:4,textTransform:"uppercase"}}>Sjablonen</span>
+              <span style={{color:th.muted,fontSize:10}}>{VERSION}</span>
+            </div>
+            <h1 style={{color:th.text,fontSize:30,margin:0,fontWeight:600,letterSpacing:-1}}>Standaard taken</h1>
+            <div style={{height:1,background:`linear-gradient(90deg,${th.accent}44,transparent)`,marginTop:14}}/>
+          </div>
+          <div style={{color:th.sub,fontSize:12,marginBottom:16}}>Klik op een sjabloon om het direct toe te voegen aan je takenlijst voor vandaag.</div>
+          <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:20}}>
+            {templates.map(tpl=>(
+              <div key={tpl.id} style={{background:th.card,border:`1px solid ${th.border}`,borderLeft:`3px solid ${tpl.color}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
+                <div style={{fontSize:20,flexShrink:0}}>{tpl.emoji}</div>
+                <div style={{flex:1}}>
+                  <div style={{color:th.text,fontSize:15,fontWeight:500}}>{tpl.text}</div>
+                  <span style={{background:tpl.color+"22",color:tpl.color,border:`1px solid ${tpl.color}44`,borderRadius:20,padding:"1px 8px",fontSize:10,fontWeight:600}}>{tpl.priority}</span>
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>addFromTemplate(tpl)} style={{background:tpl.color,border:"none",borderRadius:8,color:"#fff",padding:"6px 12px",fontSize:12,cursor:"pointer",fontFamily:SF,fontWeight:600}}>+ Voeg toe</button>
+                  <button onClick={()=>{setEditTpl(tpl.id);setTplForm({text:tpl.text,priority:tpl.priority,color:tpl.color,emoji:tpl.emoji});setShowTplForm(true);}} style={{background:th.badge,border:`1px solid ${th.border}`,borderRadius:8,color:th.sub,padding:"6px 10px",fontSize:12,cursor:"pointer",fontFamily:SF}}>✏️</button>
+                  <button onClick={()=>setTemplates(templates.filter(t=>t.id!==tpl.id))} style={{background:th.badge,border:`1px solid ${th.border}`,borderRadius:8,color:th.sub,padding:"6px 10px",fontSize:12,cursor:"pointer",fontFamily:SF}}>🗑️</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {!showTplForm&&<button onClick={()=>{setShowTplForm(true);setEditTpl(null);setTplForm({text:"",priority:"Normaal",color:"#4a90d9",emoji:"⭐"});}} style={{width:"100%",padding:13,background:"transparent",border:`2px dashed ${th.border}`,borderRadius:10,color:th.accent,fontSize:14,cursor:"pointer",fontFamily:SF}}>+ Nieuw sjabloon</button>}
+          {showTplForm&&(
+            <div style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:14,padding:18,display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{color:th.accent,fontSize:10,letterSpacing:2,textTransform:"uppercase"}}>{editTpl?"Bewerken":"Nieuw sjabloon"}</div>
+              <div style={{display:"flex",gap:9}}>
+                <input value={tplForm.emoji} onChange={e=>setTplForm({...tplForm,emoji:e.target.value})} style={{...inp,width:60,textAlign:"center",fontSize:20}} maxLength={2}/>
+                <input value={tplForm.text} onChange={e=>setTplForm({...tplForm,text:e.target.value})} placeholder="Naam van het sjabloon" style={{...inp,flex:1}}/>
+              </div>
+              <div>
+                <div style={{color:th.sub,fontSize:10,marginBottom:6,letterSpacing:1}}>PRIORITEIT</div>
+                <div style={{display:"flex",gap:7}}>
+                  {PRIORITIES.map(p=>{const c=PRIO_COLORS[p];return(
+                    <button key={p} onClick={()=>setTplForm({...tplForm,priority:p})} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1px solid ${tplForm.priority===p?c:th.border}`,background:tplForm.priority===p?c+"22":"transparent",color:tplForm.priority===p?c:th.sub,cursor:"pointer",fontFamily:SF,fontSize:12,fontWeight:tplForm.priority===p?700:400}}>{p}</button>
+                  );})}
+                </div>
+              </div>
+              <div>
+                <div style={{color:th.sub,fontSize:10,marginBottom:6,letterSpacing:1}}>KLEUR</div>
+                <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                  {["#ef5350","#ffca28","#66bb6a","#4a90d9","#e05080","#9c7bd4","#ff7a2f","#2e9e6e"].map(c=>(
+                    <button key={c} onClick={()=>setTplForm({...tplForm,color:c})} style={{width:28,height:28,borderRadius:"50%",background:c,border:tplForm.color===c?`3px solid ${th.text}`:"3px solid transparent",cursor:"pointer"}}/>
+                  ))}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:9}}>
+                <button onClick={()=>{
+                  if(!tplForm.text.trim()) return;
+                  if(editTpl!==null) setTemplates(templates.map(t=>t.id===editTpl?{...t,...tplForm}:t));
+                  else setTemplates([...templates,{id:Date.now(),...tplForm}]);
+                  setShowTplForm(false);setEditTpl(null);
+                }} style={{flex:1,padding:11,background:th.accent,border:"none",borderRadius:8,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:SF}}>{editTpl?"Opslaan":"Toevoegen"}</button>
+                <button onClick={()=>{setShowTplForm(false);setEditTpl(null);}} style={{padding:"11px 16px",background:th.badge,border:`1px solid ${th.border}`,borderRadius:8,color:th.sub,fontSize:14,cursor:"pointer",fontFamily:SF}}>Annuleer</button>
+              </div>
+            </div>
+          )}
+        </>}
+
+        {/* ── INSTELLINGEN TAB ── */}
+        {tab==="instellingen"&&<>
+          <div style={{marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{color:th.accent,fontSize:11,letterSpacing:4,textTransform:"uppercase"}}>Instellingen</span>
+              <span style={{color:th.muted,fontSize:10}}>{VERSION}</span>
+            </div>
+            <h1 style={{color:th.text,fontSize:30,margin:0,fontWeight:600,letterSpacing:-1}}>Instellingen</h1>
+            <div style={{height:1,background:`linear-gradient(90deg,${th.accent}44,transparent)`,marginTop:14}}/>
+          </div>
+
+          {/* Theme picker */}
+          <div style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:12,padding:16,marginBottom:14}}>
+            <div style={{color:th.accent,fontSize:10,letterSpacing:2,textTransform:"uppercase",marginBottom:12}}>🎨 Thema</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {Object.entries(THEMES).map(([key,t])=>(
+                <button key={key} onClick={()=>setThemeKey(key)} style={{padding:"10px 14px",borderRadius:10,border:`2px solid ${themeKey===key?th.accent:th.border}`,background:t.bg,color:t.text,cursor:"pointer",fontFamily:SF,fontSize:13,fontWeight:themeKey===key?700:400,display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
+                  <div style={{width:16,height:16,borderRadius:"50%",background:t.accent,flexShrink:0}}/>
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Export/Import */}
+          <div style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:12,padding:16,marginBottom:14}}>
+            <div style={{color:th.accent,fontSize:10,letterSpacing:2,textTransform:"uppercase",marginBottom:12}}>💾 Data</div>
+            <div style={{display:"flex",gap:9}}>
+              <button onClick={exportTasks} style={{flex:1,padding:11,background:th.accent,border:"none",borderRadius:8,color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:SF}}>↑ Exporteer taken</button>
+              <button onClick={()=>importRef.current.click()} style={{flex:1,padding:11,background:th.badge,border:`1px solid ${th.border}`,borderRadius:8,color:th.sub,fontSize:13,cursor:"pointer",fontFamily:SF}}>↓ Importeer taken</button>
+              <input ref={importRef} type="file" accept=".json" onChange={importTasks} style={{display:"none"}}/>
+            </div>
+            <div style={{marginTop:10,color:th.muted,fontSize:11,lineHeight:1.6}}>☁️ Google Drive backup: exporteer je JSON en sla op in Drive. Automatisch vereist een aparte webapp met OAuth.</div>
+          </div>
+
+          {/* Changelog */}
+          <div style={{background:th.card,border:`1px solid ${th.border}`,borderRadius:12,padding:16}}>
+            <button onClick={()=>setShowChangelog(!showChangelog)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",padding:0,fontFamily:SF}}>
+              <div style={{color:th.accent,fontSize:10,letterSpacing:2,textTransform:"uppercase"}}>📋 Versiegeschiedenis</div>
+              <div style={{color:th.sub,fontSize:16,transform:showChangelog?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}>▾</div>
+            </button>
+            {showChangelog&&(
+              <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:14}}>
+                {CHANGELOG.map(entry=>(
+                  <div key={entry.version}>
+                    <div style={{color:th.accent,fontSize:12,fontWeight:700,marginBottom:6}}>{entry.version}</div>
+                    {entry.items.map((item,i)=>(
+                      <div key={i} style={{display:"flex",gap:8,marginBottom:4}}>
+                        <span style={{color:th.accent,fontSize:11,flexShrink:0}}>·</span>
+                        <span style={{color:th.sub,fontSize:12,lineHeight:1.5}}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>}
+
+      </div>
+
+      {/* ── BOTTOM NAV ── */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:th.navBg,borderTop:`1px solid ${th.border}`,display:"flex",justifyContent:"space-around",alignItems:"center",padding:"8px 0 12px",zIndex:100,backdropFilter:"blur(12px)"}}>
+        {navItems.map(item=>(
+          <button key={item.key} onClick={()=>setTab(item.key)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 12px",borderRadius:10,fontFamily:SF}}>
+            <div style={{fontSize:20,lineHeight:1}}>{item.icon}</div>
+            <div style={{fontSize:10,color:tab===item.key?th.accent:th.sub,fontWeight:tab===item.key?700:400,letterSpacing:.5}}>{item.label}</div>
+            {tab===item.key&&<div style={{width:4,height:4,borderRadius:"50%",background:th.accent}}/>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
