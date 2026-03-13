@@ -1,629 +1,557 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motorsimulator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0c0f; --panel: #10141a; --panel2: #161c26;
-            --border: #1e2a3a; --accent: #00e5ff; --accent2: #ff4d00;
-            --green: #00ff88; --yellow: #ffe600; --red: #ff2233;
-            --text: #c8d8e8; --muted: #4a6080;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Rajdhani', sans-serif; background: var(--bg);
-            color: var(--text); min-height: 100vh;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 20px;
-            background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(0,229,255,0.04) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(255,77,0,0.04) 0%, transparent 60%);
-        }
-        h1 { font-size: 2.2em; letter-spacing: 6px; text-transform: uppercase;
-             color: var(--accent); margin: 10px 0 20px; font-weight: 700;
-             text-shadow: 0 0 30px rgba(0,229,255,0.4); }
-        .motor-select { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
-        .motor-btn { padding: 10px 20px; border: 1px solid var(--border); border-radius: 4px;
-            background: var(--panel); cursor: pointer; font-family: 'Rajdhani', sans-serif;
-            font-size: 15px; font-weight: 600; letter-spacing: 1px; color: var(--muted); transition: all 0.2s; }
-        .motor-btn:hover { border-color: var(--accent); color: var(--accent); }
-        .motor-btn.active { border-color: var(--accent); color: var(--accent);
-            background: rgba(0,229,255,0.08); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motorsimulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c0f; --panel:#10141a; --panel2:#161c26; --border:#1e2a3a;
+  --accent:#00e5ff; --accent2:#ff4d00; --green:#00ff88;
+  --yellow:#ffe600; --red:#ff2233; --text:#c8d8e8; --muted:#4a6080;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:12px;
+  background-image:radial-gradient(ellipse at 20% 50%,rgba(0,229,255,.04) 0%,transparent 60%),
+  radial-gradient(ellipse at 80% 20%,rgba(255,77,0,.04) 0%,transparent 60%)}
 
-        /* Rider weight row */
-        .rider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
-            background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-            padding: 10px 20px; width: 100%; max-width: 960px; }
-        .rider-row label { font-size: 12px; letter-spacing: 2px; color: var(--muted); white-space: nowrap; }
-        .rider-row input[type=range] { flex: 1; accent-color: var(--accent); }
-        .rider-weight-val { font-family: 'Share Tech Mono', monospace; font-size: 14px;
-            color: var(--accent); min-width: 50px; text-align: right; }
+h1{font-size:1.4em;letter-spacing:5px;color:var(--accent);margin:4px 0 10px;font-weight:700;
+   text-shadow:0 0 20px rgba(0,229,255,.4);text-transform:uppercase}
 
-        .dashboard { width: 100%; max-width: 960px; background: var(--panel);
-            border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 16px; }
-        .motor-info { text-align: center; margin-bottom: 20px; }
-        .motor-info h2 { font-size: 1.6em; letter-spacing: 3px; color: var(--text); font-weight: 700; }
-        .motor-info p { color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 13px; margin-top: 4px; }
+/* Motor knoppen */
+.motor-select{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
+.motor-btn{padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--panel);
+  cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:1px;color:var(--muted);transition:all .2s}
+.motor-btn:hover{border-color:var(--accent);color:var(--accent)}
+.motor-btn.active{border-color:var(--accent);color:var(--accent);
+  background:rgba(0,229,255,.08);box-shadow:0 0 10px rgba(0,229,255,.2)}
 
-        .instruments { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .instr-box { background: var(--panel2); border: 1px solid var(--border);
-            border-radius: 8px; padding: 18px; text-align: center; position: relative; }
-        .instr-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
-            color: var(--muted); margin-bottom: 8px; }
-        .instr-value { font-family: 'Share Tech Mono', monospace; font-size: 3.2em; font-weight: 400;
-            color: var(--green); line-height: 1; text-shadow: 0 0 20px rgba(0,255,136,0.4); }
-        .instr-unit { font-size: 13px; color: var(--muted); letter-spacing: 2px; margin-top: 6px; }
-        .gear-value { font-family: 'Share Tech Mono', monospace; font-size: 4em; color: var(--accent2);
-            text-shadow: 0 0 20px rgba(255,77,0,0.4); line-height: 1; }
-        .cvt-badge { font-size: 10px; letter-spacing: 2px; color: var(--accent);
-            background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3);
-            border-radius: 3px; padding: 2px 7px; margin-top: 6px; display: inline-block; }
+/* Stall alert */
+.stall-bar{width:100%;max-width:780px;margin-bottom:8px;border-radius:5px;
+  padding:7px 14px;font-size:13px;font-weight:700;letter-spacing:2px;text-align:center;
+  display:none;background:rgba(255,34,51,.15);border:1px solid var(--red);color:var(--red);
+  animation:stallanim .35s steps(1) infinite}
+.stall-bar.visible{display:block}
+@keyframes stallanim{0%,100%{opacity:1}50%{opacity:.4}}
 
-        /* Stall / limiter alerts */
-        .alert-bar { width: 100%; max-width: 960px; margin-bottom: 12px;
-            border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 700;
-            letter-spacing: 2px; text-align: center; display: none; }
-        .alert-bar.stall { background: rgba(255,34,51,0.15); border: 1px solid var(--red); color: var(--red); }
-        .alert-bar.limiter { background: rgba(255,230,0,0.12); border: 1px solid var(--yellow); color: var(--yellow); }
-        .alert-bar.visible { display: block; }
+/* Dashboard */
+.dash{width:100%;max-width:780px;background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:14px;margin-bottom:10px}
 
-        .rpm-section { background: var(--panel2); border: 1px solid var(--border);
-            border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
-        .rpm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .rpm-label { font-size: 11px; letter-spacing: 3px; color: var(--muted); }
-        .rpm-number { font-family: 'Share Tech Mono', monospace; font-size: 1.2em; color: var(--text); }
-        .rpm-bar-track { width: 100%; height: 22px; background: rgba(255,255,255,0.04);
-            border-radius: 4px; overflow: hidden; position: relative; }
-        .rpm-bar-fill { height: 100%; width: 0%; border-radius: 4px; transition: width 0.05s linear; position: relative;
-            background: linear-gradient(90deg, var(--green) 0%, var(--yellow) 68%, var(--red) 100%); }
-        .rpm-redline { position: absolute; right: 0; top: 0; height: 100%; width: 15%;
-            background: rgba(255,34,51,0.15); border-left: 1px solid rgba(255,34,51,0.4); pointer-events: none; }
-        /* Limiter flash */
-        .rpm-bar-fill.limiter-flash { animation: limFlash 0.08s steps(1) infinite; }
-        @keyframes limFlash { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.motor-info{text-align:center;margin-bottom:10px}
+.motor-info h2{font-size:1.1em;letter-spacing:2px;color:var(--text);font-weight:700}
+.motor-info p{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;margin-top:2px}
 
-        .curve-section { background: var(--panel2); border: 1px solid var(--border);
-            border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
-        .curve-header { font-size: 11px; letter-spacing: 3px; color: var(--muted); margin-bottom: 10px; }
-        #powerCurveCanvas { width: 100%; height: 100px; display: block; border-radius: 4px; }
+/* Top row: 4 gauges in one line */
+.gauges-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.g{background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+   padding:8px 10px;text-align:center}
+.g-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.g-val{font-family:'Share Tech Mono',monospace;font-size:2em;color:var(--green);line-height:1}
+.g-val.gear{font-size:2.4em;color:var(--accent2);text-shadow:0 0 12px rgba(255,77,0,.4)}
+.g-val.speed{text-shadow:0 0 14px rgba(0,255,136,.4)}
+.g-unit{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.cvt-badge{font-size:9px;letter-spacing:1px;color:var(--accent);background:rgba(0,229,255,.1);
+  border:1px solid rgba(0,229,255,.3);border-radius:2px;padding:1px 5px;margin-top:3px;display:inline-block}
 
-        .status-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        .status-pill { display: flex; align-items: center; gap: 7px; background: var(--panel2);
-            border: 1px solid var(--border); border-radius: 20px; padding: 7px 16px;
-            font-size: 13px; font-weight: 600; letter-spacing: 1px; color: var(--muted); transition: all 0.15s; }
-        .status-pill.on { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); }
-        .status-pill.clutch-on { border-color: var(--yellow); color: var(--yellow); background: rgba(255,230,0,0.08); }
-        .status-pill.brake-on { border-color: var(--red); color: var(--red); background: rgba(255,34,51,0.08); }
-        .status-pill.stall { border-color: var(--red); color: var(--red); background: rgba(255,34,51,0.18); animation: stallanim 0.3s steps(1) infinite; }
-        @keyframes stallanim { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: all 0.15s; }
-        .status-pill.on .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
-        .status-pill.clutch-on .dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
-        .status-pill.brake-on .dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
-        .status-pill.stall .dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+/* RPM bar */
+.rpm-wrap{margin-bottom:8px}
+.rpm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.rpm-lbl{font-size:9px;letter-spacing:2px;color:var(--muted)}
+.rpm-num{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text)}
+.rpm-track{width:100%;height:14px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;position:relative}
+.rpm-fill{height:100%;width:0%;border-radius:3px;transition:width .05s linear;
+  background:linear-gradient(90deg,var(--green) 0%,var(--yellow) 68%,var(--red) 100%)}
+.rpm-fill.lflash{animation:limFlash .08s steps(1) infinite}
+@keyframes limFlash{0%,100%{opacity:1}50%{opacity:.25}}
+.rpm-redzone{position:absolute;right:0;top:0;height:100%;width:15%;
+  background:rgba(255,34,51,.12);border-left:1px solid rgba(255,34,51,.35);pointer-events:none}
 
-        .controls { width: 100%; max-width: 960px; background: var(--panel);
-            border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-top: 4px; }
-        .controls-title { font-size: 11px; letter-spacing: 4px; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; }
-        .key-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .key-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); }
-        .key { background: var(--panel2); border: 1px solid var(--border); border-bottom: 3px solid var(--border);
-            border-radius: 5px; padding: 4px 10px; font-family: 'Share Tech Mono', monospace;
-            font-size: 13px; color: var(--accent); white-space: nowrap; }
-        @media (max-width: 600px) { .instruments { grid-template-columns: 1fr 1fr; } .instr-value { font-size: 2.4em; } }
-    </style>
+/* Second row: fuel + odometer + curve */
+.row2{display:grid;grid-template-columns:220px 1fr;gap:8px;margin-bottom:8px}
+
+/* Fuel panel */
+.fuel-panel{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px}
+.fuel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.fuel-lbl{font-size:9px;letter-spacing:2px;color:var(--muted)}
+.fuel-num{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text)}
+.fuel-track{width:100%;height:10px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.fuel-fill{height:100%;border-radius:3px;transition:width .3s linear}
+.fuel-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.fstat{text-align:center}
+.fstat-lbl{font-size:9px;letter-spacing:1px;color:var(--muted)}
+.fstat-val{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text)}
+.tank-btn{width:100%;margin-top:7px;padding:5px;border:1px solid var(--accent);border-radius:4px;
+  background:rgba(0,229,255,.08);color:var(--accent);font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s}
+.tank-btn:hover{background:rgba(0,229,255,.18)}
+.tank-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* Curve panel */
+.curve-panel{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px}
+.curve-lbl{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:5px}
+#cvs{width:100%;height:70px;display:block;border-radius:3px}
+
+/* Status row */
+.status-row{display:flex;gap:6px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:5px;background:var(--panel2);
+  border:1px solid var(--border);border-radius:14px;padding:4px 10px;
+  font-size:11px;font-weight:600;letter-spacing:1px;color:var(--muted);transition:all .15s}
+.pill.on{border-color:var(--green);color:var(--green);background:rgba(0,255,136,.07)}
+.pill.con{border-color:var(--yellow);color:var(--yellow);background:rgba(255,230,0,.07)}
+.pill.bon{border-color:var(--red);color:var(--red);background:rgba(255,34,51,.07)}
+.pill.stall{border-color:var(--red);color:var(--red);background:rgba(255,34,51,.15);animation:stallanim .35s steps(1) infinite}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:all .15s}
+.pill.on .dot{background:var(--green);box-shadow:0 0 6px var(--green)}
+.pill.con .dot{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.pill.bon .dot{background:var(--red);box-shadow:0 0 6px var(--red)}
+.pill.stall .dot{background:var(--red);box-shadow:0 0 6px var(--red)}
+
+/* Controls */
+.ctrls{width:100%;max-width:780px;background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px}
+.ctrls-title{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+.key-grid{display:flex;flex-wrap:wrap;gap:6px}
+.ki{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text)}
+.k{background:var(--panel2);border:1px solid var(--border);border-bottom:2px solid var(--border);
+   border-radius:4px;padding:2px 7px;font-family:'Share Tech Mono',monospace;
+   font-size:11px;color:var(--accent);white-space:nowrap}
+.hint{color:var(--muted);font-size:11px}
+
+/* Rider row inline with controls */
+.rider-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rider-row label{font-size:9px;letter-spacing:2px;color:var(--muted);white-space:nowrap}
+.rider-row input[type=range]{flex:1;accent-color:var(--accent);height:12px}
+.rval{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);min-width:40px;text-align:right}
+
+@media(max-width:500px){
+  .gauges-top{grid-template-columns:1fr 1fr}
+  .row2{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 <h1>🏍 Motorsimulator</h1>
-
 <div class="motor-select" id="motorSelect"></div>
+<div class="stall-bar" id="stallBar">⚠ MOTOR GESTALD — druk R om te herstarten</div>
 
-<div class="rider-row">
-    <label>RIJDERSGEWICHT</label>
-    <input type="range" id="riderSlider" min="50" max="120" value="75" step="5">
-    <span class="rider-weight-val" id="riderWeightVal">75 kg</span>
+<div class="dash">
+  <div class="motor-info">
+    <h2 id="mName">Selecteer een motor</h2>
+    <p id="mSpecs">—</p>
+  </div>
+
+  <!-- Gauges: snelheid / versnelling / vermogen / odometer -->
+  <div class="gauges-top">
+    <div class="g">
+      <div class="g-label">Snelheid</div>
+      <div class="g-val speed" id="gSpeed">0</div>
+      <div class="g-unit">KM/H</div>
+    </div>
+    <div class="g">
+      <div class="g-label">Versn.</div>
+      <div class="g-val gear" id="gGear">N</div>
+      <div id="cvtB" style="display:none"><span class="cvt-badge">CVT</span></div>
+    </div>
+    <div class="g">
+      <div class="g-label">Vermogen</div>
+      <div class="g-val" id="gPower">0</div>
+      <div class="g-unit">PK</div>
+    </div>
+    <div class="g">
+      <div class="g-label">Km-stand</div>
+      <div class="g-val" id="gOdo" style="font-size:1.3em">0.0</div>
+      <div class="g-unit">KM</div>
+    </div>
+  </div>
+
+  <!-- RPM -->
+  <div class="rpm-wrap">
+    <div class="rpm-head">
+      <span class="rpm-lbl">TOEREN</span>
+      <span class="rpm-num" id="rpmNum">0 RPM</span>
+    </div>
+    <div class="rpm-track">
+      <div class="rpm-fill" id="rpmFill"></div>
+      <div class="rpm-redzone"></div>
+    </div>
+  </div>
+
+  <!-- Row 2: fuel + power curve -->
+  <div class="row2">
+    <div class="fuel-panel">
+      <div class="fuel-head">
+        <span class="fuel-lbl">BRANDSTOF</span>
+        <span class="fuel-num" id="fuelNum">10.0 L</span>
+      </div>
+      <div class="fuel-track"><div class="fuel-fill" id="fuelFill" style="width:100%;background:var(--green)"></div></div>
+      <div class="fuel-stats">
+        <div class="fstat">
+          <div class="fstat-lbl">VERBRUIK</div>
+          <div class="fstat-val" id="fuelRate">0.0 L/h</div>
+        </div>
+        <div class="fstat">
+          <div class="fstat-lbl">ACTIERADIUS</div>
+          <div class="fstat-val" id="fuelRange">— km</div>
+        </div>
+      </div>
+      <button class="tank-btn" id="tankBtn" onclick="refuel()">⛽ TANKEN</button>
+    </div>
+
+    <div class="curve-panel">
+      <div class="curve-lbl">VERMOGENSCURVE</div>
+      <canvas id="cvs" height="70"></canvas>
+    </div>
+  </div>
+
+  <!-- Status pills -->
+  <div class="status-row">
+    <div class="pill" id="pGas"><div class="dot"></div>GAS [W]</div>
+    <div class="pill" id="pRem"><div class="dot"></div>REM [S]</div>
+    <div class="pill" id="pKop"><div class="dot"></div>KOPPELING [SHIFT]</div>
+    <div class="pill" id="pEng"><div class="dot"></div>MOTOR AAN</div>
+  </div>
 </div>
 
-<div class="alert-bar stall" id="stallAlert">⚠ MOTOR GESTALD — Druk koppeling in en start opnieuw</div>
-
-
-<div class="dashboard">
-    <div class="motor-info">
-        <h2 id="motorName">Selecteer een motor</h2>
-        <p id="motorSpecs">—</p>
-    </div>
-    <div class="instruments">
-        <div class="instr-box">
-            <div class="instr-label">Snelheid</div>
-            <div class="instr-value" id="speedDisplay">0</div>
-            <div class="instr-unit">KM/H</div>
-        </div>
-        <div class="instr-box">
-            <div class="instr-label">Versnelling</div>
-            <div class="gear-value" id="gearDisplay">N</div>
-            <div id="cvtBadge" style="display:none"><span class="cvt-badge">CVT AUTO</span></div>
-        </div>
-        <div class="instr-box">
-            <div class="instr-label">Vermogen</div>
-            <div class="instr-value" id="powerDisplay">0</div>
-            <div class="instr-unit">PK</div>
-        </div>
-    </div>
-    <div class="rpm-section">
-        <div class="rpm-header">
-            <span class="rpm-label">TOEREN</span>
-            <span class="rpm-number" id="rpmDisplay">0 <span style="color:var(--muted);font-size:0.8em">RPM</span></span>
-        </div>
-        <div class="rpm-bar-track">
-            <div class="rpm-bar-fill" id="rpmBar"></div>
-            <div class="rpm-redline"></div>
-        </div>
-    </div>
-    <div class="curve-section">
-        <div class="curve-header">VERMOGENSCURVE — HUIDIG RPM ▼</div>
-        <canvas id="powerCurveCanvas" height="100"></canvas>
-    </div>
-    <div class="status-row">
-        <div class="status-pill" id="gasIndicator"><div class="dot"></div>GAS [W]</div>
-        <div class="status-pill" id="remIndicator"><div class="dot"></div>REM [S]</div>
-        <div class="status-pill" id="koppelingIndicator"><div class="dot"></div>KOPPELING [SHIFT]</div>
-        <div class="status-pill" id="engineIndicator"><div class="dot"></div>MOTOR AAN</div>
-    </div>
-</div>
-
-<div class="controls">
-    <div class="controls-title">Besturing</div>
-    <div class="key-grid">
-        <div class="key-item"><span class="key">W</span> Gas geven</div>
-        <div class="key-item"><span class="key">S</span> Remmen</div>
-        <div class="key-item"><span class="key">SHIFT</span> Koppeling in/uit</div>
-        <div class="key-item"><span class="key">↑</span> Opschakelen (met koppeling)</div>
-        <div class="key-item"><span class="key">↓</span> Terugschakelen (met koppeling)</div>
-        <div class="key-item"><span class="key">R</span> Motor herstarten</div>
-        <div class="key-item" style="color:var(--muted);font-size:13px">⚠ Koppeling te snel los = stallen</div>
-        <div class="key-item" style="color:var(--muted);font-size:13px">⚡ Bij limiter: schakel op of koppeling in</div>
-    </div>
+<!-- Controls -->
+<div class="ctrls">
+  <div class="rider-row">
+    <label>RIJDER</label>
+    <input type="range" id="rSlider" min="50" max="120" value="75" step="5">
+    <span class="rval" id="rVal">75 kg</span>
+  </div>
+  <div class="ctrls-title">Besturing</div>
+  <div class="key-grid">
+    <div class="ki"><span class="k">W</span>Gas</div>
+    <div class="ki"><span class="k">S</span>Rem</div>
+    <div class="ki"><span class="k">SHIFT</span>Koppeling</div>
+    <div class="ki"><span class="k">↑</span>Opschakelen</div>
+    <div class="ki"><span class="k">↓</span>Terugschakelen</div>
+    <div class="ki"><span class="k">R</span>Herstarten</div>
+    <div class="ki hint">50cc = CVT · koppeling te snel los = stall</div>
+  </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// MOTOR SPECS
-// Physics: pure Newton — geen accelScale
-//   F_drive = (pkFrac * maxPower_pk * 735.5W / v_ms) * transEff
-//   F_drag  = 0.5 * 1.2 * dragArea * v²       (kwadratisch)
-//   F_roll  = totalMass * 9.81 * Crr
-//   a = F_net / totalMass
-//
-// Kalibratie op echte 0-100 tijden via dragArea en transEff:
-//   50cc  → 0-45 km/h ≈ 22s
-//   125cc → 0-100 km/h ≈ 10s
-//   300cc → 0-100 km/h ≈ 6s
-//   600cc → 0-100 km/h ≈ 3.5s
-//   1000cc→ 0-100 km/h ≈ 2.7s
-// ═══════════════════════════════════════════════════════════════════
+// ═══ MOTORS ═══════════════════════════════════════════════════════
 const motors = {
-    '50cc': {
-        name: '50cc Bromfiets',
-        cc: 50, maxPower: 4, maxRPM: 9500, idleRPM: 1800,
-        maxSpeed: 45, cvt: true, gears: 1,
-        powerCurve: [[0,0.05],[0.15,0.2],[0.3,0.45],[0.5,0.78],[0.65,0.97],[0.75,1.0],[0.88,0.88],[1.0,0.7]],
-        weight: 80,
-        transEff: 0.82,   // transmissie efficiëntie CVT
-        dragArea: 0.52,   // Cd*A m²
-        Crr: 0.015,       // rolweerstand
-        brakeDecel: 4.5,  // m/s² max remkracht
-        // Stallen: bij te snel koppeling loslaten
-        stallRPM: 1600,   // onder dit = stall
-        clutchEngageTime: 1.5, // sec om koppeling volledig te laten slippen (CVT: n.v.t.)
-    },
-    '125cc': {
-        name: '125cc Light',
-        cc: 125, maxPower: 15, maxRPM: 11500, idleRPM: 1500,
-        maxSpeed: 110, cvt: false, gears: 5,
-        gearRatios: [0.21, 0.36, 0.52, 0.68, 0.88],
-        // Breed powerband, lineair opbouwend
-        powerCurve: [[0,0.04],[0.1,0.1],[0.2,0.24],[0.32,0.46],[0.46,0.68],[0.58,0.84],[0.68,0.95],[0.77,1.0],[0.87,0.96],[0.95,0.88],[1.0,0.78]],
-        weight: 130, transEff: 0.90, dragArea: 0.46, Crr: 0.013,
-        brakeDecel: 6.5, stallRPM: 1200, clutchEngageTime: 1.2,
-    },
-    '300cc': {
-        name: '300cc Naked',
-        cc: 300, maxPower: 39, maxRPM: 12000, idleRPM: 1200,
-        maxSpeed: 165, cvt: false, gears: 6,
-        gearRatios: [0.18, 0.32, 0.47, 0.61, 0.76, 0.92],
-        powerCurve: [[0,0.04],[0.1,0.12],[0.2,0.28],[0.32,0.50],[0.44,0.70],[0.55,0.87],[0.65,0.97],[0.73,1.0],[0.83,0.97],[0.93,0.9],[1.0,0.8]],
-        weight: 170, transEff: 0.91, dragArea: 0.40, Crr: 0.013,
-        brakeDecel: 8.0, stallRPM: 1000, clutchEngageTime: 1.0,
-    },
-    '600cc': {
-        name: '600cc Supersport',
-        cc: 600, maxPower: 120, maxRPM: 14500, idleRPM: 1000,
-        maxSpeed: 265, cvt: false, gears: 6,
-        gearRatios: [0.155, 0.285, 0.43, 0.575, 0.73, 0.90],
-        // Inline-4: weinig laag, explosief hoog
-        powerCurve: [[0,0.03],[0.1,0.06],[0.2,0.13],[0.3,0.25],[0.42,0.46],[0.53,0.66],[0.63,0.83],[0.72,0.95],[0.79,1.0],[0.88,0.97],[0.95,0.91],[1.0,0.83]],
-        weight: 190, transEff: 0.92, dragArea: 0.30, Crr: 0.012,
-        brakeDecel: 9.5, stallRPM: 900, clutchEngageTime: 0.9,
-    },
-    '1000cc': {
-        name: '1000cc Superbike',
-        cc: 1000, maxPower: 205, maxRPM: 14000, idleRPM: 1000,
-        maxSpeed: 305, cvt: false, gears: 6,
-        gearRatios: [0.145, 0.27, 0.415, 0.56, 0.715, 0.89],
-        // V4/Inline-4: vroeg sterk, hoog piek
-        powerCurve: [[0,0.05],[0.08,0.14],[0.18,0.32],[0.28,0.52],[0.38,0.69],[0.48,0.84],[0.58,0.94],[0.67,1.0],[0.77,0.99],[0.87,0.94],[1.0,0.87]],
-        weight: 200, transEff: 0.92, dragArea: 0.27, Crr: 0.011,
-        brakeDecel: 10.5, stallRPM: 900, clutchEngageTime: 0.8,
-    }
+  '50cc':{name:'50cc Bromfiets',cc:50,maxPower:4,maxRPM:9500,idleRPM:1800,maxSpeed:45,
+    cvt:true,gears:1,
+    powerCurve:[[0,.05],[.15,.2],[.3,.45],[.5,.78],[.65,.97],[.75,1],[.88,.88],[1,.7]],
+    weight:80,transEff:.82,dragArea:.52,Crr:.015,brakeDecel:4.5,stallRPM:1600,
+    clutchEngageTime:1.5,tankL:5,fuelPerKWh:0.28},
+  '125cc':{name:'125cc Light',cc:125,maxPower:15,maxRPM:11500,idleRPM:1500,maxSpeed:110,
+    cvt:false,gears:5,gearRatios:[.21,.36,.52,.68,.88],
+    powerCurve:[[0,.04],[.1,.1],[.2,.24],[.32,.46],[.46,.68],[.58,.84],[.68,.95],[.77,1],[.87,.96],[.95,.88],[1,.78]],
+    weight:130,transEff:.90,dragArea:.46,Crr:.013,brakeDecel:6.5,stallRPM:1200,
+    clutchEngageTime:1.2,tankL:12,fuelPerKWh:0.22},
+  '300cc':{name:'300cc Naked',cc:300,maxPower:39,maxRPM:12000,idleRPM:1200,maxSpeed:165,
+    cvt:false,gears:6,gearRatios:[.18,.32,.47,.61,.76,.92],
+    powerCurve:[[0,.04],[.1,.12],[.2,.28],[.32,.5],[.44,.7],[.55,.87],[.65,.97],[.73,1],[.83,.97],[.93,.9],[1,.8]],
+    weight:170,transEff:.91,dragArea:.40,Crr:.013,brakeDecel:8.0,stallRPM:1000,
+    clutchEngageTime:1.0,tankL:14,fuelPerKWh:0.20},
+  '600cc':{name:'600cc Supersport',cc:600,maxPower:120,maxRPM:14500,idleRPM:1000,maxSpeed:265,
+    cvt:false,gears:6,gearRatios:[.155,.285,.43,.575,.73,.90],
+    powerCurve:[[0,.03],[.1,.06],[.2,.13],[.3,.25],[.42,.46],[.53,.66],[.63,.83],[.72,.95],[.79,1],[.88,.97],[.95,.91],[1,.83]],
+    weight:190,transEff:.92,dragArea:.30,Crr:.012,brakeDecel:9.5,stallRPM:900,
+    clutchEngageTime:.9,tankL:17,fuelPerKWh:0.18},
+  '1000cc':{name:'1000cc Superbike',cc:1000,maxPower:205,maxRPM:14000,idleRPM:1000,maxSpeed:305,
+    cvt:false,gears:6,gearRatios:[.145,.27,.415,.56,.715,.89],
+    powerCurve:[[0,.05],[.08,.14],[.18,.32],[.28,.52],[.38,.69],[.48,.84],[.58,.94],[.67,1],[.77,.99],[.87,.94],[1,.87]],
+    weight:200,transEff:.92,dragArea:.27,Crr:.011,brakeDecel:10.5,stallRPM:900,
+    clutchEngageTime:.8,tankL:18,fuelPerKWh:0.16},
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════════
-let m = null;           // current motor
-let speedMs = 0;        // m/s
-let rpm = 0;
-let gear = 0;           // 0 = neutraal
-let throttle = false;
-let braking = false;
-let clutch = false;     // koppeling ingedrukt
-let engineOn = false;
-let stalled = false;
+// ═══ STATE ════════════════════════════════════════════════════════
+let m=null, speedMs=0, rpm=0, gear=0;
+let throttle=false, braking=false, clutch=false;
+let engineOn=false, stalled=false;
+let clutchReleaseTimer=0, prevClutch=false;
+let riderMass=75;
+let fuelL=0, odoKm=0;
+const TICK=.05, RHO=1.2;
 
-// Koppeling loslaat-timer: hoe lang geleden begon de koppeling los te gaan?
-let clutchReleaseTimer = 0;   // seconds since clutch started releasing
-let prevClutch = false;        // vorige tick koppeling staat
-
-let riderMass = 75; // kg
-
-const TICK = 0.05;  // 50ms
-const RHO  = 1.2;   // luchtdichtheid kg/m³
-
-// ═══════════════════════════════════════════════════════════════════
-// HULPFUNCTIES
-// ═══════════════════════════════════════════════════════════════════
-function getPowerFraction(motor, rpmVal) {
-    const frac = Math.max(0, Math.min(rpmVal / motor.maxRPM, 1));
-    const c = motor.powerCurve;
-    for (let i = 1; i < c.length; i++) {
-        if (frac <= c[i][0]) {
-            const t = (frac - c[i-1][0]) / (c[i][0] - c[i-1][0]);
-            return c[i-1][1] + t * (c[i][1] - c[i-1][1]);
-        }
-    }
-    return c[c.length-1][1];
+// ═══ HELPERS ══════════════════════════════════════════════════════
+function pkFrac(motor, r){
+  const f=Math.max(0,Math.min(r/motor.maxRPM,1)),c=motor.powerCurve;
+  for(let i=1;i<c.length;i++) if(f<=c[i][0]){
+    const t=(f-c[i-1][0])/(c[i][0]-c[i-1][0]);
+    return c[i-1][1]+t*(c[i][1]-c[i-1][1]);
+  }
+  return c[c.length-1][1];
 }
+function totalMass(){return (m?m.weight:150)+riderMass}
 
-function totalMass() { return (m ? m.weight : 150) + riderMass; }
-
-// ═══════════════════════════════════════════════════════════════════
-// UI SETUP
-// ═══════════════════════════════════════════════════════════════════
-const motorSelect = document.getElementById('motorSelect');
-Object.keys(motors).forEach(key => {
-    const btn = document.createElement('button');
-    btn.className = 'motor-btn';
-    btn.textContent = motors[key].name;
-    btn.onclick = () => selectMotor(key, btn);
-    motorSelect.appendChild(btn);
+// ═══ MOTOR BUTTONS ════════════════════════════════════════════════
+const ms=document.getElementById('motorSelect');
+Object.keys(motors).forEach(k=>{
+  const b=document.createElement('button');
+  b.className='motor-btn'; b.textContent=motors[k].name;
+  b.onclick=()=>selectMotor(k,b); ms.appendChild(b);
 });
 
-document.getElementById('riderSlider').addEventListener('input', function() {
-    riderMass = +this.value;
-    document.getElementById('riderWeightVal').textContent = riderMass + ' kg';
+function selectMotor(key,btn){
+  m=motors[key]; speedMs=0; rpm=m.idleRPM;
+  gear=m.cvt?1:0; engineOn=true; stalled=false;
+  clutchReleaseTimer=0; prevClutch=false;
+  fuelL=m.tankL; odoKm=0;
+  document.querySelectorAll('.motor-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mName').textContent=m.name;
+  document.getElementById('mSpecs').textContent=
+    `${m.cc}cc | ${m.maxPower} pk | ${m.gears} ${m.cvt?'CVT':'versn.'} | max ${m.maxSpeed} km/h | tank ${m.tankL}L`;
+  document.getElementById('cvtB').style.display=m.cvt?'block':'none';
+  document.getElementById('stallBar').classList.remove('visible');
+  updateEngPill(); drawCurve(); updateDisplay();
+}
+
+function refuel(){
+  if(!m) return;
+  fuelL=m.tankL;
+  document.getElementById('tankBtn').disabled=false;
+  updateDisplay();
+}
+
+// ═══ KEYBOARD ════════════════════════════════════════════════════
+const SIM=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Shift'];
+document.addEventListener('keydown',e=>{
+  if(SIM.includes(e.key)) e.preventDefault();
+  if(!m) return;
+  const k=e.key;
+  if(k==='w'||k==='W') throttle=true;
+  if(k==='s'||k==='S') braking=true;
+  if(k==='Shift') clutch=true;
+  if((k==='r'||k==='R')&&stalled) restart();
+  if(!m.cvt&&clutch&&!stalled){
+    if(k==='ArrowUp'&&gear<m.gears) gear++;
+    if(k==='ArrowDown'&&gear>0) gear--;
+  }
+  updatePills();
+});
+document.addEventListener('keyup',e=>{
+  if(e.key==='w'||e.key==='W') throttle=false;
+  if(e.key==='s'||e.key==='S') braking=false;
+  if(e.key==='Shift') clutch=false;
+  updatePills();
 });
 
-function selectMotor(key, btn) {
-    m = motors[key];
-    speedMs = 0; rpm = m.idleRPM;
-    gear = m.cvt ? 1 : 0;
-    engineOn = true; stalled = false;
-    clutchReleaseTimer = 0;
-    document.querySelectorAll('.motor-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('motorName').textContent = m.name;
-    document.getElementById('motorSpecs').textContent =
-        `${m.cc}cc  |  ${m.maxPower} pk  |  ${m.gears} ${m.cvt ? 'CVT' : 'versn.'}  |  max ${m.maxSpeed} km/h`;
-    document.getElementById('cvtBadge').style.display = m.cvt ? 'block' : 'none';
-    setAlert('stall', false); setAlert('limiter', false);
-    updateEngineIndicator();
-    drawPowerCurve();
-    updateDisplay();
+function restart(){
+  if(!m) return;
+  stalled=false; engineOn=true; rpm=m.idleRPM;
+  gear=m.cvt?1:0; clutchReleaseTimer=0;
+  document.getElementById('stallBar').classList.remove('visible');
+  updateEngPill();
 }
 
-function setAlert(type, on) {
-    document.getElementById(type + 'Alert').classList.toggle('visible', on);
+function updatePills(){
+  set('pGas','on',throttle&&!stalled);
+  set('pRem','bon',braking);
+  set('pKop','con',clutch);
+}
+function set(id,cls,on){
+  const el=document.getElementById(id);
+  el.classList.remove('on','bon','con');
+  if(on) el.classList.add(cls);
+}
+function updateEngPill(){
+  const p=document.getElementById('pEng');
+  p.className='pill'+(stalled?' stall':engineOn?' on':'');
+  p.innerHTML=`<div class="dot"></div>${stalled?'GESTALD [R]':'MOTOR AAN'}`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// TOETSENBORD
-// ═══════════════════════════════════════════════════════════════════
-// Blokkeer alle scrollen van simulatietoetsen
-const SIM_KEYS = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Shift'];
-document.addEventListener('keydown', e => {
-    if (SIM_KEYS.includes(e.key)) e.preventDefault();
-    if (!m) return;
-    const k = e.key;
-    if (k === 'w' || k === 'W') throttle = true;
-    if (k === 's' || k === 'S') braking = true;
-    if (k === 'Shift') clutch = true;
-    if ((k === 'r' || k === 'R') && stalled) restartEngine();
-
-    if (!m.cvt && clutch && !stalled) {
-        if (k === 'ArrowUp') { if (gear < m.gears) gear++; }
-        if (k === 'ArrowDown') { if (gear > 0) gear--; }
-    }
-    updateIndicators();
+// ═══ RIDER SLIDER ════════════════════════════════════════════════
+document.getElementById('rSlider').addEventListener('input',function(){
+  riderMass=+this.value;
+  document.getElementById('rVal').textContent=riderMass+' kg';
 });
 
-document.addEventListener('keyup', e => {
-    if (e.key === 'w' || e.key === 'W') throttle = false;
-    if (e.key === 's' || e.key === 'S') braking = false;
-    if (e.key === 'Shift') clutch = false;
-    updateIndicators();
-});
+// ═══ PHYSICS ═════════════════════════════════════════════════════
+function physics(){
+  if(!m) return;
 
-function restartEngine() {
-    if (!m) return;
-    stalled = false; engineOn = true;
-    rpm = m.idleRPM; gear = m.cvt ? 1 : 0;
-    setAlert('stall', false);
-    updateEngineIndicator();
-}
+  // Gestald
+  if(stalled){
+    const Fd=.5*RHO*m.dragArea*speedMs*speedMs;
+    const Fr=totalMass()*9.81*m.Crr;
+    if(braking) speedMs=Math.max(0,speedMs-m.brakeDecel*TICK);
+    else speedMs=Math.max(0,speedMs-((Fd+Fr)/totalMass())*TICK);
+    rpm=0; updateDisplay(); return;
+  }
 
-function updateIndicators() {
-    const gas = document.getElementById('gasIndicator');
-    const rem = document.getElementById('remIndicator');
-    const kop = document.getElementById('koppelingIndicator');
-    gas.className = 'status-pill' + (throttle && !stalled ? ' on' : '');
-    rem.className = 'status-pill' + (braking ? ' brake-on' : '');
-    kop.className = 'status-pill' + (clutch ? ' clutch-on' : '');
-}
+  // Geen benzine = stall
+  if(fuelL<=0){
+    fuelL=0; stalled=true; engineOn=false; rpm=0;
+    document.getElementById('stallBar').textContent='⛽ GEEN BENZINE — Druk ⛽ TANKEN';
+    document.getElementById('stallBar').classList.add('visible');
+    updateEngPill(); updateDisplay(); return;
+  }
 
-function updateEngineIndicator() {
-    const eng = document.getElementById('engineIndicator');
-    if (stalled) {
-        eng.className = 'status-pill stall';
-        eng.innerHTML = '<div class="dot"></div>GESTALD [R]';
-    } else if (engineOn) {
-        eng.className = 'status-pill on';
-        eng.innerHTML = '<div class="dot"></div>MOTOR AAN';
+  const driving=gear>0&&!clutch;
+
+  // Koppeling timer
+  if(!m.cvt){
+    if(prevClutch&&!clutch) clutchReleaseTimer=0;
+    if(!clutch&&gear>0) clutchReleaseTimer+=TICK;
+    prevClutch=clutch;
+  }
+
+  // RPM neutraal/koppeling in
+  if(!driving){
+    if(throttle){
+      rpm=Math.min(rpm+m.idleRPM*3.8*TICK, m.maxRPM*.97);
     } else {
-        eng.className = 'status-pill';
-        eng.innerHTML = '<div class="dot"></div>MOTOR UIT';
+      const tau=.55+(m.maxRPM/15000)*.9;
+      rpm+=(m.idleRPM-rpm)*(TICK/tau);
     }
+  }
+
+  let F_drive=0, F_eb=0, inLim=false;
+
+  if(driving){
+    const gr=m.cvt?null:m.gearRatios[gear-1];
+    const maxMs=m.cvt?m.maxSpeed/3.6:m.maxSpeed*gr/3.6;
+
+    if(m.cvt){
+      const sf=Math.min(speedMs/(m.maxSpeed/3.6),1);
+      const tRPM=throttle?m.idleRPM+sf*(m.maxRPM*.78-m.idleRPM):m.idleRPM+sf*(m.maxRPM*.38-m.idleRPM);
+      rpm+=(tRPM-rpm)*(TICK/.25);
+    } else {
+      const tRPM=m.idleRPM+(speedMs/maxMs)*(m.maxRPM-m.idleRPM);
+      rpm+=(Math.min(tRPM,m.maxRPM)-rpm)*(TICK/.06);
+      if(rpm>=m.maxRPM*.985){inLim=true;rpm=m.maxRPM*.985;speedMs=Math.min(speedMs,maxMs);F_drive=0;}
+      if(rpm<m.stallRPM&&clutchReleaseTimer<m.clutchEngageTime&&!throttle){doStall();return;}
+      if(rpm<=m.stallRPM+100&&!throttle&&speedMs<2){doStall();return;}
+    }
+
+    if(!inLim){
+      const pf=pkFrac(m,rpm);
+      const pw=throttle?pf*m.maxPower*735.5*m.transEff:0;
+      F_drive=pw/Math.max(speedMs,.5);
+
+      // Benzineverbruik: W naar L/s
+      if(throttle&&pw>0){
+        // L/s = kW * fuelPerKWh / 3600
+        const kW=pw/1000;
+        const used=kW*m.fuelPerKWh/3600*TICK;
+        fuelL=Math.max(0,fuelL-used);
+      }
+    }
+    if(!throttle){
+      const ebs=m.cvt?.015:(1.1-(gr||.5))*.06;
+      F_eb=totalMass()*9.81*ebs;
+    }
+  }
+
+  // Stationair verbruik (motor draait)
+  if(engineOn&&!driving&&!throttle){
+    fuelL=Math.max(0,fuelL-m.fuelPerKWh*0.5/3600*TICK*m.idleRPM/m.maxRPM);
+  }
+
+  const Fd=.5*RHO*m.dragArea*speedMs*speedMs;
+  const Fr=totalMass()*9.81*m.Crr;
+  const Fb=braking?totalMass()*m.brakeDecel:0;
+  const Fnet=F_drive-Fd-Fr-F_eb-Fb;
+  speedMs=Math.max(0,speedMs+Fnet/totalMass()*TICK);
+  speedMs=Math.min(speedMs,m.maxSpeed/3.6);
+  rpm=Math.max(engineOn?m.idleRPM:0,Math.min(rpm,m.maxRPM));
+  if(speedMs<.1&&!throttle) speedMs=0;
+
+  // Odometer
+  odoKm+=speedMs*TICK/1000;
+
+  document.getElementById('rpmFill').classList.toggle('lflash',inLim);
+  updateDisplay();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// PHYSICS LOOP
-// ═══════════════════════════════════════════════════════════════════
-function updatePhysics() {
-    if (!m) return;
-
-    // ── GESTALD ───────────────────────────────────────────────────
-    if (stalled) {
-        // Langzaam uitrollen (geen motorremming meer)
-        const Fd = 0.5 * RHO * m.dragArea * speedMs * speedMs;
-        const Fr = totalMass() * 9.81 * m.Crr;
-        if (braking) speedMs = Math.max(0, speedMs - m.brakeDecel * TICK);
-        else speedMs = Math.max(0, speedMs - ((Fd + Fr) / totalMass()) * TICK);
-        rpm = 0;
-        setAlert('stall', true);
-        updateEngineIndicator();
-        updateDisplay(); return;
-    }
-
-    const driving = gear > 0 && !clutch;
-
-    // ── KOPPELING LOSLATEN TIMER (stall check) ────────────────────
-    if (!m.cvt) {
-        if (prevClutch && !clutch) {
-            // Koppeling NET losgelaten — start timer
-            clutchReleaseTimer = 0;
-        }
-        if (!clutch && gear > 0) {
-            clutchReleaseTimer += TICK;
-        }
-        prevClutch = clutch;
-    }
-
-    // ── RPM NEUTRAAL / KOPPELING IN ───────────────────────────────
-    if (!driving) {
-        if (throttle) {
-            // Revs omhoog, snelheid afhankelijk van motorkarakter
-            const revUp = m.idleRPM * 3.8;
-            rpm = Math.min(rpm + revUp * TICK, m.maxRPM * 0.97);
-        } else {
-            // Exponentieel terugzakken — tau ≈ 0.7-1.2s
-            const tau = 0.55 + (m.maxRPM / 15000) * 0.9;
-            rpm += (m.idleRPM - rpm) * (TICK / tau);
-        }
-    }
-
-    // ── RIJDEND ───────────────────────────────────────────────────
-    let F_drive = 0;
-    let F_engine_brake = 0;
-    let inLimiter = false;
-
-    if (driving) {
-        const gr = m.cvt ? null : m.gearRatios[gear - 1];
-        const maxSpeedGear = m.cvt ? m.maxSpeed : m.maxSpeed * gr;
-        const maxSpeedMs = maxSpeedGear / 3.6;
-
-        if (m.cvt) {
-            // CVT: RPM volgt gas + snelheid automatisch
-            const sf = Math.min(speedMs / (m.maxSpeed / 3.6), 1);
-            const targetRPM = throttle
-                ? m.idleRPM + sf * (m.maxRPM * 0.78 - m.idleRPM)
-                : m.idleRPM + sf * (m.maxRPM * 0.38 - m.idleRPM);
-            rpm += (targetRPM - rpm) * (TICK / 0.25);
-        } else {
-            // Handmatig: RPM STRIKT gekoppeld aan snelheid in versnelling
-            const targetRPM = m.idleRPM + (speedMs / maxSpeedMs) * (m.maxRPM - m.idleRPM);
-            rpm += (Math.min(targetRPM, m.maxRPM) - rpm) * (TICK / 0.06);
-
-            // ── LIMITER ────────────────────────────────────────────
-            if (rpm >= m.maxRPM * 0.985) {
-                // Limiter: snijdt brandstof, geen kracht meer
-                inLimiter = true;
-                rpm = m.maxRPM * 0.985;
-                // Snelheid mag niet verder groeien boven limiet versnelling
-                speedMs = Math.min(speedMs, maxSpeedMs);
-                // Geen aandrijfkracht
-                F_drive = 0;
-            }
-
-            // ── STALL CHECK ────────────────────────────────────────
-            // Als RPM onder stallRPM zakt terwijl koppeling losgelaten wordt te snel
-            if (rpm < m.stallRPM && clutchReleaseTimer < m.clutchEngageTime && !throttle) {
-                stalled = true;
-                engineOn = false;
-                rpm = 0;
-                setAlert('stall', true);
-                updateEngineIndicator();
-                updateDisplay(); return;
-            }
-            // Extra: bij heel laag RPM + geen gas + rijdend = stall
-            if (rpm <= m.stallRPM + 100 && !throttle && speedMs < 2) {
-                stalled = true; engineOn = false; rpm = 0;
-                setAlert('stall', true); updateEngineIndicator(); updateDisplay(); return;
-            }
-        }
-
-        // ── AANDRIJFKRACHT (als niet in limiter) ──────────────────
-        if (!inLimiter) {
-            const pkFrac = getPowerFraction(m, rpm);
-            const powerW = throttle ? pkFrac * m.maxPower * 735.5 * m.transEff : 0;
-            const vEff = Math.max(speedMs, 0.5);
-            F_drive = powerW / vEff;
-        }
-
-        // ── ENGINE BRAKING ─────────────────────────────────────────
-        if (!throttle) {
-            const ebStrength = m.cvt ? 0.015 : (1.1 - (gr || 0.5)) * 0.06;
-            F_engine_brake = totalMass() * 9.81 * ebStrength;
-        }
-    }
-
-    // ── LUCHTWEERSTAND + ROLWEERSTAND ─────────────────────────────
-    const F_drag = 0.5 * RHO * m.dragArea * speedMs * speedMs;
-    const F_roll = totalMass() * 9.81 * m.Crr;
-
-    // ── REM ───────────────────────────────────────────────────────
-    let F_brake = 0;
-    if (braking) F_brake = totalMass() * m.brakeDecel;
-
-    // ── NETTO KRACHT + ACCELERATIE ─────────────────────────────────
-    const F_net = F_drive - F_drag - F_roll - F_engine_brake - F_brake;
-    const accel = F_net / totalMass();
-    speedMs = Math.max(0, speedMs + accel * TICK);
-
-    // ── GRENZEN ───────────────────────────────────────────────────
-    speedMs = Math.min(speedMs, m.maxSpeed / 3.6);
-    rpm = Math.max(engineOn ? m.idleRPM : 0, Math.min(rpm, m.maxRPM));
-    if (speedMs < 0.1 && !throttle) speedMs = 0;
-
-    // ── UI ALERTS ──────────────────────────────────────────────────
-    document.getElementById('rpmBar').classList.toggle('limiter-flash', inLimiter);
-
-    updateDisplay();
+function doStall(){
+  stalled=true; engineOn=false; rpm=0;
+  document.getElementById('stallBar').textContent='⚠ MOTOR GESTALD — druk R om te herstarten';
+  document.getElementById('stallBar').classList.add('visible');
+  updateEngPill(); updateDisplay();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// DISPLAY
-// ═══════════════════════════════════════════════════════════════════
-function updateDisplay() {
-    if (!m) return;
-    const kmh = speedMs * 3.6;
-    document.getElementById('speedDisplay').textContent = Math.round(kmh);
-    document.getElementById('gearDisplay').textContent =
-        m.cvt ? 'CVT' : (gear === 0 ? 'N' : gear);
-    document.getElementById('rpmDisplay').textContent =
-        stalled ? 'GESTALD' : Math.round(rpm).toLocaleString('nl');
+// ═══ DISPLAY ══════════════════════════════════════════════════════
+function updateDisplay(){
+  if(!m) return;
+  const kmh=speedMs*3.6;
+  document.getElementById('gSpeed').textContent=Math.round(kmh);
+  document.getElementById('gGear').textContent=m.cvt?'CVT':(gear===0?'N':gear);
+  document.getElementById('rpmNum').textContent=(stalled?'GESTALD':Math.round(rpm).toLocaleString('nl'))+' RPM';
+  const pf=pkFrac(m,rpm);
+  document.getElementById('gPower').textContent=(throttle&&!stalled)?Math.round(pf*m.maxPower):0;
+  document.getElementById('rpmFill').style.width=(stalled?0:(rpm/m.maxRPM)*100)+'%';
+  document.getElementById('gOdo').textContent=odoKm.toFixed(1);
 
-    const pkFrac = getPowerFraction(m, rpm);
-    const currentPK = (throttle && !stalled) ? Math.round(pkFrac * m.maxPower) : 0;
-    document.getElementById('powerDisplay').textContent = currentPK;
+  // Snelheidskleur
+  const sp=kmh/m.maxSpeed;
+  document.getElementById('gSpeed').style.color=sp>.85?'var(--red)':sp>.6?'var(--yellow)':'var(--green)';
 
-    const rpmPct = stalled ? 0 : (rpm / m.maxRPM) * 100;
-    document.getElementById('rpmBar').style.width = rpmPct + '%';
+  // Brandstof
+  const fPct=fuelL/m.tankL*100;
+  const fBar=document.getElementById('fuelFill');
+  fBar.style.width=fPct+'%';
+  fBar.style.background=fPct<15?'var(--red)':fPct<35?'var(--yellow)':'var(--green)';
+  document.getElementById('fuelNum').textContent=fuelL.toFixed(2)+' L';
 
-    // Snelheidskleur: groen → geel → rood op basis van % topsnelheid
-    const speedPct = kmh / m.maxSpeed;
-    const col = speedPct > 0.85 ? 'var(--red)' : speedPct > 0.6 ? 'var(--yellow)' : 'var(--green)';
-    document.getElementById('speedDisplay').style.color = col;
+  // Verbruik in L/h (ruwweg)
+  if(throttle&&!stalled&&gear>0&&!clutch){
+    const pf2=pkFrac(m,rpm);
+    const kW=pf2*m.maxPower*735.5*m.transEff/1000;
+    const lph=kW*m.fuelPerKWh;
+    document.getElementById('fuelRate').textContent=lph.toFixed(1)+' L/h';
+    const range=kmh>2?fuelL/lph*kmh:0;
+    document.getElementById('fuelRange').textContent=range>0?Math.round(range)+' km':'— km';
+  } else {
+    document.getElementById('fuelRate').textContent='0.0 L/h';
+    document.getElementById('fuelRange').textContent='— km';
+  }
 
-    drawPowerCurve(rpm);
+  // Tanken knop
+  document.getElementById('tankBtn').disabled=fuelL>=m.tankL*.99;
+  document.getElementById('tankBtn').textContent=fuelL>=m.tankL*.99?'✓ VOL':'⛽ TANKEN';
+
+  drawCurve(rpm);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// POWER CURVE CANVAS
-// ═══════════════════════════════════════════════════════════════════
-function drawPowerCurve(currentRpm) {
-    if (!m) return;
-    const canvas = document.getElementById('powerCurveCanvas');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.offsetWidth || 800;
-    const H = 100;
-    canvas.width = W; canvas.height = H;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f1520'; ctx.fillRect(0, 0, W, H);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-        const y = (i / 4) * H;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
-    // Redline zone (laatste 15%)
-    const rx = W * 0.85;
-    ctx.fillStyle = 'rgba(255,34,51,0.08)'; ctx.fillRect(rx, 0, W - rx, H);
-
-    // Curve tekenen
-    const pts = m.powerCurve;
-    ctx.beginPath();
-    ctx.moveTo(pts[0][0] * W, H - pts[0][1] * (H - 14) - 7);
-    for (let i = 1; i < pts.length; i++) {
-        const px = pts[i][0] * W, py = H - pts[i][1] * (H - 14) - 7;
-        const cpx = (pts[i-1][0] + pts[i][0]) / 2 * W;
-        ctx.bezierCurveTo(cpx, H - pts[i-1][1]*(H-14)-7, cpx, py, px, py);
-    }
-    ctx.strokeStyle = 'rgba(0,229,255,0.65)'; ctx.lineWidth = 2.5; ctx.stroke();
-
-    // Gradient fill
-    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, 'rgba(0,229,255,0.14)');
-    grad.addColorStop(1, 'rgba(0,229,255,0)');
-    ctx.fillStyle = grad; ctx.fill();
-
-    // Huidige RPM marker
-    if (currentRpm !== undefined && !stalled) {
-        const x = (currentRpm / m.maxRPM) * W;
-        const pkF = getPowerFraction(m, currentRpm);
-        const y = H - pkF * (H - 14) - 7;
-        ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x, 0);
-        ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
-        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 12;
-        ctx.fill(); ctx.shadowBlur = 0;
-        const pk = Math.round(pkF * m.maxPower);
-        ctx.fillStyle = '#00ff88'; ctx.font = '11px Share Tech Mono, monospace';
-        ctx.fillText(`${pk} pk`, Math.min(x + 7, W - 50), Math.max(y - 7, 14));
-    }
+// ═══ POWER CURVE ══════════════════════════════════════════════════
+function drawCurve(cur){
+  if(!m) return;
+  const cvs=document.getElementById('cvs');
+  const ctx=cvs.getContext('2d');
+  const W=cvs.offsetWidth||600, H=70;
+  cvs.width=W; cvs.height=H;
+  ctx.fillStyle='#0f1520'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=i/3*H;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  ctx.fillStyle='rgba(255,34,51,.07)'; ctx.fillRect(W*.85,0,W*.15,H);
+  const pts=m.powerCurve;
+  ctx.beginPath(); ctx.moveTo(pts[0][0]*W,H-pts[0][1]*(H-10)-5);
+  for(let i=1;i<pts.length;i++){
+    const px=pts[i][0]*W,py=H-pts[i][1]*(H-10)-5;
+    const cpx=(pts[i-1][0]+pts[i][0])/2*W;
+    ctx.bezierCurveTo(cpx,H-pts[i-1][1]*(H-10)-5,cpx,py,px,py);
+  }
+  ctx.strokeStyle='rgba(0,229,255,.65)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgba(0,229,255,.13)'); g.addColorStop(1,'rgba(0,229,255,0)');
+  ctx.fillStyle=g; ctx.fill();
+  if(cur!==undefined&&!stalled){
+    const x=(cur/m.maxRPM)*W, pf=pkFrac(m,cur), y=H-pf*(H-10)-5;
+    ctx.beginPath(); ctx.moveTo(x,H); ctx.lineTo(x,0);
+    ctx.strokeStyle='rgba(0,255,136,.3)'; ctx.lineWidth=1.2;
+    ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#00ff88'; ctx.shadowColor='#00ff88'; ctx.shadowBlur=10;
+    ctx.fill(); ctx.shadowBlur=0;
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// GAME LOOP
-// ═══════════════════════════════════════════════════════════════════
-setInterval(updatePhysics, TICK * 1000);
-
-// Standaard 125cc selecteren
-motorSelect.querySelectorAll('.motor-btn')[1].click();
+setInterval(physics, TICK*1000);
+ms.querySelectorAll('.motor-btn')[1].click();
 </script>
 </body>
 </html>
