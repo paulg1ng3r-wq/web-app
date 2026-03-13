@@ -1,1326 +1,490 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<title>ArduSim v4</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@800&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#080d14;--panel:#0f1b28;--p2:#162230;--b:#1c2e44;--b2:#273f5c;--acc:#00d4aa;--a2:#0099ff;--tx:#d5e5f0;--t2:#7090a8;--t3:#2e4460}
-body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
-#top{height:44px;display:flex;align-items:center;gap:5px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--b);flex-shrink:0}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--acc);margin-right:4px}.logo span{color:var(--a2)}
-.btn{display:flex;align-items:center;gap:4px;padding:4px 9px;background:#111c27;border:1px solid var(--b);border-radius:4px;color:var(--t2);font-family:inherit;font-size:10px;cursor:pointer;transition:.1s;white-space:nowrap}
-.btn:hover{border-color:var(--b2);color:var(--tx)}.btn.run{background:#0a2818;border-color:#1a5030;color:#4ade80}.btn.stop{background:#280a0a;border-color:#501818;color:#f87171}
-.bsp{flex:1}.bsep{width:1px;height:20px;background:var(--b);margin:0 2px}
-.badge{display:flex;align-items:center;gap:5px;padding:3px 8px;background:#111c27;border:1px solid var(--b);border-radius:4px;font-size:9px;color:var(--t3)}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--t3)}.dot.on{background:#4ade80;box-shadow:0 0 5px #4ade80;animation:bl .9s infinite}
-@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
-#app{flex:1;display:flex;min-height:0}
-#side{width:190px;background:var(--panel);border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
-.pt{padding:7px 10px;font-size:8px;font-weight:700;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--b)}
-#clist{flex:1;overflow-y:auto;padding:3px}
-#clist::-webkit-scrollbar{width:3px}#clist::-webkit-scrollbar-thumb{background:var(--b2)}
-.cat{font-size:8px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase;padding:6px 4px 2px}
-.ci{display:flex;align-items:center;gap:5px;padding:4px 5px;border-radius:4px;cursor:grab;border:1px solid transparent;margin-bottom:1px}
-.ci:hover{background:#111c27;border-color:var(--b)}.ci:active{cursor:grabbing}
-.ico{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
-.cn{font-size:9px;color:var(--t2)}.cs{font-size:7px;color:var(--t3)}
-#cvw{flex:1;position:relative;overflow:hidden}
-#cv{display:block;cursor:default}
-#tbar{position:absolute;top:8px;left:8px;display:flex;gap:3px;background:var(--panel);border:1px solid var(--b);border-radius:5px;padding:3px;z-index:5}
-.tb2{width:28px;height:28px;border-radius:3px;border:1px solid transparent;background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
-.tb2:hover{background:#111c27;color:var(--tx)}.tb2.on{background:#111c27;border-color:var(--a2);color:var(--a2)}
-#wcp{position:absolute;top:46px;left:8px;display:none;gap:4px;background:var(--panel);border:1px solid var(--b);border-radius:5px;padding:5px;z-index:5}
-#wcp.show{display:flex}
-.wcb{width:15px;height:15px;border-radius:50%;border:2px solid transparent;cursor:pointer}.wcb:hover{transform:scale(1.2)}.wcb.on{border-color:#fff}
-#zbtn{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:3px;z-index:5}
-.zb{width:28px;height:28px;background:var(--panel);border:1px solid var(--b);border-radius:4px;color:var(--t2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.zb:hover{border-color:var(--b2);color:var(--tx)}
-#rp{width:355px;background:var(--panel);border-left:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0}
-.rtabs{display:flex;border-bottom:1px solid var(--b)}
-.rt{padding:8px 12px;font-size:9px;font-weight:600;letter-spacing:.4px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;text-transform:uppercase}
-.rt:hover{color:var(--t2)}.rt.on{color:var(--acc);border-bottom-color:var(--acc)}
-.rc{flex:1;display:flex;flex-direction:column;min-height:0}
-.rpane{display:none;flex:1;flex-direction:column;min-height:0}.rpane.on{display:flex}
-#code{flex:1;background:#080f18;color:#c5d1dd;border:none;padding:10px;font-family:inherit;font-size:11px;line-height:1.65;resize:none;outline:none;tab-size:2;overflow-y:auto}
-.etb{display:flex;gap:3px;padding:5px 8px;border-top:1px solid var(--b);background:#111c27;flex-wrap:wrap}
-#sout{flex:1;background:#080f18;color:#4ade80;font-family:inherit;font-size:10px;padding:8px;overflow-y:auto;line-height:1.5}
-.sl{margin-bottom:1px}.sl.sys{color:var(--t3);font-style:italic}.sl.err{color:#f87171}
-#sinrow{display:flex;border-top:1px solid var(--b)}
-#sin{flex:1;background:#111c27;border:none;padding:6px 8px;color:var(--tx);font-family:inherit;font-size:10px;outline:none}
-#sin::placeholder{color:var(--t3)}
-#ssend{padding:6px 10px;background:#111c27;border:none;border-left:1px solid var(--b);color:var(--acc);cursor:pointer;font-size:10px;font-family:inherit}
-#pi{padding:10px;overflow-y:auto;flex:1}
-.pr{display:flex;align-items:center;margin-bottom:5px;gap:5px}
-.pl{width:82px;font-size:9px;color:var(--t3);flex-shrink:0}
-.pi2{flex:1;background:#111c27;border:1px solid var(--b);border-radius:3px;padding:3px 6px;color:var(--tx);font-family:inherit;font-size:10px;outline:none}
-.pi2:focus{border-color:var(--a2)}
-.psel{flex:1;background:#111c27;border:1px solid var(--b);border-radius:3px;padding:3px 6px;color:var(--tx);font-family:inherit;font-size:10px;outline:none}
-.psec{font-size:8px;font-weight:700;letter-spacing:1px;color:var(--t3);text-transform:uppercase;margin:10px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--b)}
-.nosel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--t3);font-size:10px;text-align:center;line-height:1.7}
-#sb{height:20px;background:var(--panel);border-top:1px solid var(--b);display:flex;align-items:center;padding:0 10px;gap:10px;font-size:8px;color:var(--t3);flex-shrink:0}
-#ctx{position:fixed;background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:3px;z-index:1000;display:none;min-width:140px;box-shadow:0 8px 24px #00000099}
-#ctx.show{display:block}
-.cx{padding:5px 10px;font-size:10px;color:var(--t2);cursor:pointer;border-radius:3px;display:flex;align-items:center;gap:6px}
-.cx:hover{background:#111c27;color:var(--tx)}.cx.d{color:#f87171}.cx.d:hover{background:#280808}
-.cxs{height:1px;background:var(--b);margin:2px 0}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motorsimulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e3c72;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .motor-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .motor-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #e0e0e0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .motor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .motor-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .dashboard {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .motor-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .motor-info h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .motor-info p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        .speedometer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .speed-display {
+            font-size: 5em;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            margin-right: 20px;
+        }
+
+        .speed-unit {
+            font-size: 2em;
+            color: #aaa;
+        }
+
+        .gauges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .gauge {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .gauge-label {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .gauge-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .gear-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        .rpm-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .rpm-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88 0%, #ffeb3b 70%, #ff5252 100%);
+            transition: width 0.1s;
+            border-radius: 15px;
+        }
+
+        .controls {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .controls h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .control-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-item strong {
+            color: #1e3c72;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .control-item span {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+
+        .indicator.active {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .indicator.inactive {
+            background: #333;
+        }
+    </style>
 </head>
 <body>
-<div id="top">
-  <div class="logo">Ardu<span>Sim</span> <span style="font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-weight:400">v4</span></div>
-  <div class="bsep"></div>
-  <button class="btn" onclick="newProj()">📄 Nieuw</button>
-  <button class="btn" onclick="saveProj()">💾 Opslaan</button>
-  <button class="btn" onclick="loadProj()">📂 Laden</button>
-  <div class="bsep"></div>
-  <button class="btn" onclick="doCompile()">🔨 Check</button>
-  <button class="btn run" id="runbtn" onclick="toggleRun()">▶ Uitvoeren</button>
-  <button class="btn stop" id="stopbtn" style="display:none" onclick="stopSim()">⏹ Stop</button>
-  <div class="bsep"></div>
-  <button class="btn" onclick="clearAll()">🗑 Wissen</button>
-  <div class="bsp"></div>
-  <div class="badge"><div class="dot" id="sdot"></div><span id="slbl">Gestopt</span></div>
-</div>
-<div id="app">
-  <div id="side">
-    <div class="pt">📦 Componenten — sleep naar canvas</div>
-    <div id="clist">
-      <div class="cat">Microcontrollers</div>
-      <div class="ci" draggable="true" data-t="uno"><div class="ico" style="background:#003d3f">🟢</div><div><div class="cn">Arduino UNO</div><div class="cs">ATmega328P · 14 I/O</div></div></div>
-      <div class="ci" draggable="true" data-t="nano"><div class="ico" style="background:#003300">🟩</div><div><div class="cn">Arduino Nano</div><div class="cs">ATmega328P · mini</div></div></div>
-      <div class="ci" draggable="true" data-t="mega"><div class="ico" style="background:#001830">🔵</div><div><div class="cn">Arduino Mega</div><div class="cs">ATmega2560 · 54 I/O</div></div></div>
-      <div class="ci" draggable="true" data-t="esp32"><div class="ico" style="background:#1a0030">🔴</div><div><div class="cn">ESP32</div><div class="cs">Dual-core · WiFi+BT</div></div></div>
-      <div class="ci" draggable="true" data-t="esp8266"><div class="ico" style="background:#0a1a0a">🟤</div><div><div class="cn">ESP8266 NodeMCU</div><div class="cs">WiFi · 11 I/O</div></div></div>
-      <div class="cat">Output</div>
-      <div class="ci" draggable="true" data-t="led_r"><div class="ico" style="background:#2a0808">💡</div><div><div class="cn">LED Rood</div><div class="cs">5mm · Vf 2.0V</div></div></div>
-      <div class="ci" draggable="true" data-t="led_g"><div class="ico" style="background:#082a08">💡</div><div><div class="cn">LED Groen</div><div class="cs">5mm · Vf 2.1V</div></div></div>
-      <div class="ci" draggable="true" data-t="led_b"><div class="ico" style="background:#08082a">💡</div><div><div class="cn">LED Blauw</div><div class="cs">5mm · Vf 3.2V</div></div></div>
-      <div class="ci" draggable="true" data-t="led_y"><div class="ico" style="background:#2a2a08">💡</div><div><div class="cn">LED Geel</div><div class="cs">5mm · Vf 2.0V</div></div></div>
-      <div class="ci" draggable="true" data-t="led_w"><div class="ico" style="background:#1a1a1a">💡</div><div><div class="cn">LED Wit</div><div class="cs">5mm · Vf 3.2V</div></div></div>
-      <div class="ci" draggable="true" data-t="buzzer"><div class="ico" style="background:#111">🔊</div><div><div class="cn">Buzzer</div><div class="cs">Actief · 5V</div></div></div>
-      <div class="ci" draggable="true" data-t="servo"><div class="ico" style="background:#1a1a3a">⚙</div><div><div class="cn">Servo SG90</div><div class="cs">0–180° PWM</div></div></div>
-      <div class="ci" draggable="true" data-t="dcmotor"><div class="ico" style="background:#1a1a1a">🔧</div><div><div class="cn">DC Motor</div><div class="cs">Zichtbaar draaiend</div></div></div>
-      <div class="ci" draggable="true" data-t="lcd"><div class="ico" style="background:#1a2a1a">🖥</div><div><div class="cn">LCD 16×2 I2C</div><div class="cs">Tekst display</div></div></div>
-      <div class="cat">Input</div>
-      <div class="ci" draggable="true" data-t="button"><div class="ico" style="background:#2a0808">🔘</div><div><div class="cn">Drukknop</div><div class="cs">Klik om in te drukken</div></div></div>
-      <div class="ci" draggable="true" data-t="pot"><div class="ico" style="background:#1a1a1a">🎛</div><div><div class="cn">Potentiometer</div><div class="cs">Sleep om te draaien</div></div></div>
-      <div class="ci" draggable="true" data-t="joystick"><div class="ico" style="background:#1a081a">🕹</div><div><div class="cn">Joystick</div><div class="cs">Sleep de knop</div></div></div>
-      <div class="ci" draggable="true" data-t="dht22"><div class="ico" style="background:#081a2a">🌡</div><div><div class="cn">DHT22</div><div class="cs">Temp + vochtigheid</div></div></div>
-      <div class="ci" draggable="true" data-t="ultrasonic"><div class="ico" style="background:#1a1a2a">📡</div><div><div class="cn">HC-SR04</div><div class="cs">Ultrasoon afstand</div></div></div>
-      <div class="ci" draggable="true" data-t="pir"><div class="ico" style="background:#2a1808">👁</div><div><div class="cn">PIR Sensor</div><div class="cs">Klik = beweging</div></div></div>
-      <div class="cat">Passief</div>
-      <div class="ci" draggable="true" data-t="res"><div class="ico" style="background:#2a1808">〰</div><div><div class="cn">Weerstand</div><div class="cs">220Ω · instelbaar</div></div></div>
-      <div class="ci" draggable="true" data-t="cap"><div class="ico" style="background:#1a1a08">⚡</div><div><div class="cn">Condensator</div><div class="cs">Elektrolytisch µF</div></div></div>
-      <div class="ci" draggable="true" data-t="diode"><div class="ico" style="background:#1a1a1a">◀</div><div><div class="cn">Diode 1N4007</div><div class="cs">Gelijkrichter</div></div></div>
-      <div class="ci" draggable="true" data-t="npn"><div class="ico" style="background:#1a1a1a">📐</div><div><div class="cn">NPN 2N2222</div><div class="cs">BJT transistor</div></div></div>
-      <div class="cat">Voeding</div>
-      <div class="ci" draggable="true" data-t="vcc5"><div class="ico" style="background:#1a0808">🔴</div><div><div class="cn">+5V VCC</div><div class="cs">Altijd 5V op pin</div></div></div>
-      <div class="ci" draggable="true" data-t="vcc33"><div class="ico" style="background:#1a0a04">🟠</div><div><div class="cn">+3.3V VCC</div><div class="cs">Altijd 3.3V op pin</div></div></div>
-      <div class="ci" draggable="true" data-t="gnd"><div class="ico" style="background:#080808">⚫</div><div><div class="cn">GND</div><div class="cs">Massa · 0V</div></div></div>
-      <div class="ci" draggable="true" data-t="bb"><div class="ico" style="background:#2a2a18">⬛</div><div><div class="cn">Breadboard</div><div class="cs">400 punten</div></div></div>
-    </div>
-  </div>
+    <div class="container">
+        <h1>🏍️ Motorsimulator</h1>
+        
+        <div class="motor-select" id="motorSelect"></div>
 
-  <div id="cvw">
-    <canvas id="cv"></canvas>
-    <div id="tbar">
-      <button class="tb2 on" id="t_sel" onclick="setTool('sel')" title="Selecteren (S)">↖</button>
-      <button class="tb2" id="t_wire" onclick="setTool('wire')" title="Draad (W)">〰</button>
-      <button class="tb2" id="t_del" onclick="setTool('del')" title="Verwijderen (X)">✕</button>
-      <button class="tb2" id="t_pan" onclick="setTool('pan')" title="Schuiven (Spatie)">✋</button>
-    </div>
-    <div id="wcp">
-      <div class="wcb on" style="background:#e53e3e" data-c="red" onclick="setWC('red')"></div>
-      <div class="wcb" style="background:#3182ce" data-c="blue" onclick="setWC('blue')"></div>
-      <div class="wcb" style="background:#38a169" data-c="green" onclick="setWC('green')"></div>
-      <div class="wcb" style="background:#d69e2e" data-c="yellow" onclick="setWC('yellow')"></div>
-      <div class="wcb" style="background:#e2e8f0" data-c="white" onclick="setWC('white')"></div>
-      <div class="wcb" style="background:#718096" data-c="black" onclick="setWC('black')"></div>
-      <div class="wcb" style="background:#e040fb" data-c="purple" onclick="setWC('purple')"></div>
-      <div class="wcb" style="background:#ff6b35" data-c="orange" onclick="setWC('orange')"></div>
-    </div>
-    <div id="zbtn">
-      <button class="zb" onclick="doZoom(1.2,W/2,H/2)">+</button>
-      <button class="zb" onclick="doZoom(0.833,W/2,H/2)">−</button>
-      <button class="zb" onclick="resetView()">⊡</button>
-    </div>
-  </div>
+        <div class="dashboard">
+            <div class="motor-info">
+                <h2 id="motorName">Selecteer een motor</h2>
+                <p id="motorSpecs"></p>
+            </div>
 
-  <div id="rp">
-    <div class="rtabs">
-      <div class="rt on" onclick="rtab(0)">Code</div>
-      <div class="rt" onclick="rtab(1)">Serieel</div>
-      <div class="rt" onclick="rtab(2)">Eigenschappen</div>
-    </div>
-    <div class="rc">
-      <div class="rpane on" id="rp0">
-        <textarea id="code" spellcheck="false">// ArduSim v4 — Volledig functioneel!
-// ⚡ Power pins staan ALTIJD aan (ook zonder code)
-// Verbind LED anode → 220Ω weerstand → D13
-// Verbind LED kathode → GND
-// Dan knippert de LED met onderstaande code.
-int led = 13;
+            <div class="speedometer">
+                <div class="speed-display" id="speedDisplay">0</div>
+                <div class="speed-unit">km/h</div>
+            </div>
 
-void setup() {
-  pinMode(led, OUTPUT);
-  Serial.begin(9600);
-  Serial.println("ArduSim v4 - klaar!");
-}
-
-void loop() {
-  digitalWrite(led, HIGH);
-  Serial.println("LED AAN");
-  delay(1000);
-  digitalWrite(led, LOW);
-  Serial.println("LED UIT");
-  delay(1000);
-}
-</textarea>
-        <div class="etb">
-          <button class="btn" onclick="tpl('blink')">Blink</button>
-          <button class="btn" onclick="tpl('knop')">Knop</button>
-          <button class="btn" onclick="tpl('pot')">Pot</button>
-          <button class="btn" onclick="tpl('serial')">Serial</button>
-          <button class="btn" onclick="tpl('servo')">Servo</button>
-          <button class="btn" onclick="tpl('lcd')">LCD</button>
-          <button class="btn" onclick="tpl('joy')">Joystick</button>
-          <div style="flex:1"></div>
-          <button class="btn" onclick="document.getElementById('code').value=''">Wis</button>
+            <div class="gauges">
+                <div class="gauge">
+                    <div class="gauge-label">Versnelling</div>
+                    <div class="gear-display" id="gearDisplay">N</div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">Toeren (RPM)</div>
+                    <div class="gauge-value" id="rpmDisplay">0</div>
+                    <div class="rpm-bar">
+                        <div class="rpm-fill" id="rpmBar"></div>
+                    </div>
+                </div>
+                <div class="gauge">
+                    <div class="gauge-label">Vermogen</div>
+                    <div class="gauge-value" id="powerDisplay">0 PK</div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="rpane" id="rp1">
-        <div id="sout"><div class="sl sys">// Seriële monitor — start simulatie voor output</div></div>
-        <div id="sinrow">
-          <input id="sin" placeholder="Stuur data..." onkeydown="if(event.key==='Enter')sendSer()">
-          <button id="ssend" onclick="sendSer()">Stuur</button>
+
+        <div class="controls">
+            <h3>Besturing</h3>
+            <div class="control-grid">
+                <div class="control-item">
+                    <strong>W - Gas geven <span class="indicator inactive" id="gasIndicator"></span></strong>
+                    <span>Geef gas om te versnellen</span>
+                </div>
+                <div class="control-item">
+                    <strong>S - Remmen <span class="indicator inactive" id="remIndicator"></span></strong>
+                    <span>Rem om te vertragen</span>
+                </div>
+                <div class="control-item">
+                    <strong>Shift - Koppeling <span class="indicator inactive" id="koppelingIndicator"></span></strong>
+                    <span>Houd ingedrukt om te schakelen</span>
+                </div>
+                <div class="control-item">
+                    <strong>↑ - Opschakelen</strong>
+                    <span>Schakel naar hogere versnelling</span>
+                </div>
+                <div class="control-item">
+                    <strong>↓ - Terugschakelen</strong>
+                    <span>Schakel naar lagere versnelling</span>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="rpane" id="rp2">
-        <div id="pi"><div class="nosel">⚙<br>Selecteer een component<br>om eigenschappen en<br>live spanning te zien</div></div>
-      </div>
     </div>
-  </div>
-</div>
-<div id="sb">
-  <span id="sbc">0 componenten</span><span>·</span>
-  <span id="sbw">0 draden</span><span>·</span>
-  <span id="sbt">↖ Selecteren</span>
-  <div style="flex:1"></div>
-  <span id="sbpos">0, 0</span><span>·</span><span id="sbz">100%</span>
-</div>
-<div id="ctx">
-  <div class="cx" onclick="ctx_dup()">📋 Dupliceren</div>
-  <div class="cx" onclick="ctx_rot()">🔄 Draaien 90°</div>
-  <div class="cxs"></div>
-  <div class="cx" onclick="rtab(2)">⚙ Eigenschappen</div>
-  <div class="cxs"></div>
-  <div class="cx d" onclick="ctx_del()">🗑 Verwijderen</div>
-</div>
 
-<script>
-'use strict';
-// ════════════════════════════════════════════════════════
-// CANVAS & VIEWPORT
-// ════════════════════════════════════════════════════════
-const cv=document.getElementById('cv');
-const g=cv.getContext('2d');
-const cvw=document.getElementById('cvw');
-let W=0,H=0,vx=0,vy=0,vz=1;
-function resize(){W=cvw.clientWidth;H=cvw.clientHeight;cv.width=W;cv.height=H;draw();}
-window.addEventListener('resize',resize);
-const ws=(x,y)=>({x:(x-vx)*vz+W/2,y:(y-vy)*vz+H/2});
-const sw=(x,y)=>({x:(x-W/2)/vz+vx,y:(y-H/2)/vz+vy});
-function doZoom(f,sx,sy){const b=sw(sx,sy);vz=Math.max(0.08,Math.min(5,vz*f));const a=sw(sx,sy);vx+=b.x-a.x;vy+=b.y-a.y;draw();updSb();}
-function resetView(){vx=0;vy=0;vz=1;draw();updSb();}
+    <script>
+        // Motorspecificaties
+        const motors = {
+            '50cc': {
+                name: '50cc Bromfiets',
+                cc: 50,
+                maxPower: 4,
+                maxRPM: 10000,
+                idleRPM: 2000,
+                maxSpeed: 45,
+                gears: 3,
+                gearRatios: [0.35, 0.6, 0.85],
+                weight: 90,
+                acceleration: 0.8
+            },
+            '125cc': {
+                name: '125cc Light',
+                cc: 125,
+                maxPower: 15,
+                maxRPM: 11000,
+                idleRPM: 1500,
+                maxSpeed: 110,
+                gears: 5,
+                gearRatios: [0.25, 0.4, 0.55, 0.7, 0.9],
+                weight: 130,
+                acceleration: 2.5
+            },
+            '300cc': {
+                name: '300cc Naked',
+                cc: 300,
+                maxPower: 39,
+                maxRPM: 12000,
+                idleRPM: 1200,
+                maxSpeed: 160,
+                gears: 6,
+                gearRatios: [0.2, 0.35, 0.5, 0.65, 0.8, 0.95],
+                weight: 170,
+                acceleration: 4.5
+            },
+            '600cc': {
+                name: '600cc Supersport',
+                cc: 600,
+                maxPower: 120,
+                maxRPM: 14000,
+                idleRPM: 1000,
+                maxSpeed: 260,
+                gears: 6,
+                gearRatios: [0.18, 0.32, 0.48, 0.62, 0.78, 0.92],
+                weight: 190,
+                acceleration: 8
+            },
+            '1000cc': {
+                name: '1000cc Superbike',
+                cc: 1000,
+                maxPower: 200,
+                maxRPM: 13500,
+                idleRPM: 1000,
+                maxSpeed: 300,
+                gears: 6,
+                gearRatios: [0.16, 0.3, 0.45, 0.6, 0.75, 0.9],
+                weight: 200,
+                acceleration: 12
+            }
+        };
 
-// ════════════════════════════════════════════════════════
-// COMPONENT DEFINITIONS
-// pin types: power|gnd|digital|pwm|analog|any
-// Power/gnd pins ALWAYS carry their voltage — no code needed
-// ════════════════════════════════════════════════════════
-const D={};
+        let currentMotor = null;
+        let speed = 0;
+        let rpm = 0;
+        let gear = 0; // 0 = neutraal
+        let throttle = false;
+        let brake = false;
+        let clutch = false;
 
-D.uno={label:'Arduino UNO',w:162,h:215,
-  pins:[
-    {id:'5V',x:0,y:152,type:'power',voltage:5,label:'5V'},
-    {id:'3V3',x:0,y:165,type:'power',voltage:3.3,label:'3.3V'},
-    {id:'GND',x:0,y:178,type:'gnd',label:'GND'},
-    {id:'GND2',x:0,y:191,type:'gnd',label:'GND'},
-    {id:'VIN',x:0,y:204,type:'power',voltage:7,label:'VIN'},
-    {id:'A0',x:0,y:50,type:'analog',label:'A0'},{id:'A1',x:0,y:63,type:'analog',label:'A1'},
-    {id:'A2',x:0,y:76,type:'analog',label:'A2'},{id:'A3',x:0,y:89,type:'analog',label:'A3'},
-    {id:'A4',x:0,y:102,type:'analog',label:'A4/SDA'},{id:'A5',x:0,y:115,type:'analog',label:'A5/SCL'},
-    {id:'D0',x:162,y:22,type:'digital',label:'0/RX'},{id:'D1',x:162,y:35,type:'digital',label:'1/TX'},
-    {id:'D2',x:162,y:48,type:'digital',label:'2'},{id:'D3',x:162,y:61,type:'pwm',label:'3~'},
-    {id:'D4',x:162,y:74,type:'digital',label:'4'},{id:'D5',x:162,y:87,type:'pwm',label:'5~'},
-    {id:'D6',x:162,y:100,type:'pwm',label:'6~'},{id:'D7',x:162,y:113,type:'digital',label:'7'},
-    {id:'D8',x:162,y:126,type:'digital',label:'8'},{id:'D9',x:162,y:139,type:'pwm',label:'9~'},
-    {id:'D10',x:162,y:152,type:'pwm',label:'10~'},{id:'D11',x:162,y:165,type:'pwm',label:'11~'},
-    {id:'D12',x:162,y:178,type:'digital',label:'12'},{id:'D13',x:162,y:191,type:'digital',label:'13'},
-  ],
-  draw(c,S){
-    g.fillStyle='#004d50';rr(0,0,c.w,c.h,6);g.fill();g.strokeStyle='#00bcd4';g.lineWidth=1.5;g.stroke();
-    g.fillStyle='#00e5ff';g.font='bold 7px Syne,sans-serif';g.textAlign='center';g.fillText('ARDUINO UNO',81,13);
-    g.fillStyle='#111';rr(52,68,58,52,2);g.fill();g.strokeStyle='#333';g.lineWidth=.7;g.stroke();
-    g.fillStyle='#555';g.font='4.5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('ATmega328P',81,97);
-    g.fillStyle='#222';rr(56,215,50,10,1);g.fill();g.strokeStyle='#555';g.lineWidth=.7;g.stroke();
-    g.fillStyle='#666';g.font='4px JetBrains Mono,monospace';g.textAlign='center';g.fillText('USB',81,222);
-    this.pins.forEach(p=>{
-      const col=p.type==='power'?'#ff9977':p.type==='gnd'?'#667788':p.type==='analog'?'#88ffcc':p.type==='pwm'?'#88aaff':'#aaccff';
-      g.strokeStyle=col;g.lineWidth=.8;
-      if(p.x===0){g.beginPath();g.moveTo(0,p.y);g.lineTo(7,p.y);g.stroke();g.fillStyle=col;g.font='4px JetBrains Mono,monospace';g.textAlign='left';g.fillText(p.label,9,p.y+1.5);}
-      else{g.beginPath();g.moveTo(c.w-7,p.y);g.lineTo(c.w,p.y);g.stroke();g.fillStyle=col;g.font='4px JetBrains Mono,monospace';g.textAlign='right';g.fillText(p.label,c.w-9,p.y+1.5);}
-    });
-  }
-};
-
-function makeBoard(id,label,w,h,bg,border,chip,pins){
-  D[id]={label,w,h,pins,draw(c,S){
-    g.fillStyle=bg;rr(0,0,w,h,5);g.fill();g.strokeStyle=border;g.lineWidth=1.5;g.stroke();
-    g.fillStyle=border;g.font='bold 6px Syne,sans-serif';g.textAlign='center';g.fillText(label.toUpperCase(),w/2,12);
-    const cw=Math.min(w*.45,55),ch=Math.min(h*.3,45);
-    g.fillStyle='#111';rr(w/2-cw/2,h/2-ch/2,cw,ch,2);g.fill();g.strokeStyle='#333';g.lineWidth=.6;g.stroke();
-    g.fillStyle='#555';g.font='4px JetBrains Mono,monospace';g.textAlign='center';g.fillText(chip,w/2,h/2+2);
-    this.pins.forEach(p=>{
-      const col=p.type==='power'?'#ff9977':p.type==='gnd'?'#667788':p.type==='analog'?'#88ffcc':'#aaccff';
-      g.strokeStyle=col;g.lineWidth=.7;
-      if(p.x===0){g.beginPath();g.moveTo(0,p.y);g.lineTo(6,p.y);g.stroke();g.fillStyle=col;g.font='4px JetBrains Mono,monospace';g.textAlign='left';g.fillText(p.label,8,p.y+1.5);}
-      else{g.beginPath();g.moveTo(w-6,p.y);g.lineTo(w,p.y);g.stroke();g.fillStyle=col;g.font='4px JetBrains Mono,monospace';g.textAlign='right';g.fillText(p.label,w-8,p.y+1.5);}
-    });
-  }};
-}
-makeBoard('nano','Arduino Nano',52,180,'#003300','#00cc00','ATmega328P',[
-  {id:'5V',x:0,y:130,type:'power',voltage:5,label:'5V'},{id:'GND',x:0,y:143,type:'gnd',label:'GND'},
-  {id:'A0',x:0,y:58,type:'analog',label:'A0'},{id:'A1',x:0,y:71,type:'analog',label:'A1'},
-  {id:'A2',x:0,y:84,type:'analog',label:'A2'},{id:'A3',x:0,y:97,type:'analog',label:'A3'},
-  {id:'D2',x:52,y:58,type:'digital',label:'D2'},{id:'D3',x:52,y:71,type:'pwm',label:'D3~'},
-  {id:'D4',x:52,y:84,type:'digital',label:'D4'},{id:'D5',x:52,y:97,type:'pwm',label:'D5~'},
-  {id:'D6',x:52,y:110,type:'pwm',label:'D6~'},{id:'D7',x:52,y:123,type:'digital',label:'D7'},
-  {id:'D8',x:52,y:136,type:'digital',label:'D8'},{id:'D9',x:52,y:149,type:'pwm',label:'D9~'},
-  {id:'D13',x:52,y:162,type:'digital',label:'D13'},
-]);
-makeBoard('mega','Arduino Mega',205,265,'#001830','#0066cc','ATmega2560',[
-  {id:'5V',x:0,y:182,type:'power',voltage:5,label:'5V'},{id:'GND',x:0,y:195,type:'gnd',label:'GND'},
-  ...[0,1,2,3,4,5,6,7].map((i)=>({id:'A'+i,x:0,y:28+i*17,type:'analog',label:'A'+i})),
-  ...[0,1,2,3,4,5,6,7,8,9,10,11,12,13].map((i)=>({id:'D'+i,x:205,y:28+i*17,type:[3,5,6,9,10,11].includes(i)?'pwm':'digital',label:'D'+i})),
-]);
-makeBoard('esp32','ESP32 DevKit',70,225,'#1a0030','#9c27b0','Dual-Core WiFi+BT',[
-  {id:'3V3',x:0,y:55,type:'power',voltage:3.3,label:'3.3V'},{id:'GND',x:0,y:68,type:'gnd',label:'GND'},
-  {id:'5V',x:0,y:170,type:'power',voltage:5,label:'VIN'},
-  ...['IO2','IO4','IO5','IO12','IO13','IO14','IO15','IO16','IO17','IO18','IO19'].map((id,i)=>({id,x:70,y:55+i*13,type:'digital',label:id})),
-  ...['IO34','IO35','IO32','IO33'].map((id,i)=>({id,x:0,y:81+i*13,type:'analog',label:id})),
-]);
-makeBoard('esp8266','ESP8266',62,195,'#0a1a0a','#4caf50','NodeMCU WiFi',[
-  {id:'3V3',x:0,y:78,type:'power',voltage:3.3,label:'3.3V'},{id:'GND',x:0,y:91,type:'gnd',label:'GND'},
-  {id:'5V',x:0,y:117,type:'power',voltage:5,label:'VIN'},{id:'A0',x:0,y:60,type:'analog',label:'A0'},
-  ...['D0','D1','D2','D3','D4','D5','D6','D7','D8'].map((id,i)=>({id,x:62,y:60+i*13,type:'digital',label:id})),
-]);
-
-// LEDs
-function mkLed(type,col,dark,vf,label){
-  D[type]={label,w:22,h:44,ledCol:col,ledVf:vf,
-    pins:[{id:'A',x:7,y:44,type:'any',label:'A+'},{id:'K',x:15,y:44,type:'any',label:'K−'}],
-    draw(c,S){
-      const va=S.V[c.id+'_A']??0,vk=S.V[c.id+'_K']??0;
-      const diff=va-vk,on=diff>=vf-0.3&&diff>0;
-      const bright=on?Math.min(1,(diff-vf+0.5)/0.8):0;
-      if(on){g.shadowColor=col;g.shadowBlur=16*bright;}
-      g.fillStyle=on?col:dark;g.beginPath();g.arc(11,12,9,0,Math.PI*2);g.fill();
-      g.strokeStyle=on?col:col+'33';g.lineWidth=1.2;g.stroke();
-      g.shadowBlur=0;
-      g.fillStyle=on?col:dark;rr(2,12,18,11,0);g.fill();rr(2,19,18,12,2);g.fill();
-      g.strokeStyle=on?col:col+'33';g.lineWidth=1.2;rr(2,19,18,12,2);g.stroke();
-      if(on){g.fillStyle='rgba(255,255,255,.22)';g.beginPath();g.arc(7,9,3.5,0,Math.PI*2);g.fill();}
-      g.strokeStyle='#aaa';g.lineWidth=1.5;
-      g.beginPath();g.moveTo(7,31);g.lineTo(7,44);g.stroke();
-      g.beginPath();g.moveTo(15,31);g.lineTo(15,44);g.stroke();
-      g.beginPath();g.moveTo(15,38);g.lineTo(18,38);g.stroke();// cathode mark
-    }
-  };
-}
-mkLed('led_r','#ff2020','#280808',2.0,'LED Rood');
-mkLed('led_g','#20ff50','#082808',2.1,'LED Groen');
-mkLed('led_b','#2040ff','#080828',3.2,'LED Blauw');
-mkLed('led_y','#ffdd00','#282208',2.0,'LED Geel');
-mkLed('led_w','#ddeeff','#181820',3.2,'LED Wit');
-
-D.res={label:'Weerstand',w:60,h:18,
-  pins:[{id:'1',x:0,y:9,type:'any',label:'1'},{id:'2',x:60,y:9,type:'any',label:'2'}],
-  draw(c,S){
-    const r=c.props.resistance||220;const bands=resBands(r);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;g.lineCap='round';
-    g.beginPath();g.moveTo(0,9);g.lineTo(13,9);g.stroke();
-    g.beginPath();g.moveTo(47,9);g.lineTo(60,9);g.stroke();
-    g.fillStyle='#d4a574';rr(13,2,34,14,4);g.fill();g.strokeStyle='#777';g.lineWidth=.6;g.stroke();
-    [17,23,29,39].forEach((x,i)=>{g.fillStyle=bands[i];rr(x,2,4,14,1);g.fill();});
-    g.fillStyle='#111';g.font='bold 5px JetBrains Mono,monospace';g.textAlign='center';g.fillText(fmtR(r),30,10);
-  }
-};
-
-D.button={label:'Drukknop',w:36,h:36,
-  pins:[{id:'1',x:0,y:12,type:'any',label:'1'},{id:'2',x:36,y:12,type:'any',label:'2'},
-        {id:'3',x:0,y:24,type:'any',label:'3'},{id:'4',x:36,y:24,type:'any',label:'4'}],
-  draw(c,S){
-    const pr=S.X[c.id+'_pressed']||false;
-    g.fillStyle='#111';rr(0,0,36,36,3);g.fill();g.strokeStyle='#444';g.lineWidth=1.2;g.stroke();
-    [[0,12],[36,12],[0,24],[36,24]].forEach(([x,y])=>{g.strokeStyle='#aaa';g.lineWidth=1.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+(x===0?4:-4),y);g.stroke();});
-    g.fillStyle=pr?'#881111':'#cc2222';g.beginPath();g.arc(18,18,11,0,Math.PI*2);g.fill();
-    g.strokeStyle='#660000';g.lineWidth=1.5;g.stroke();
-    g.fillStyle='rgba(255,255,255,.15)';g.beginPath();g.arc(14,14,4,0,Math.PI*2);g.fill();
-  }
-};
-
-D.pot={label:'Potentiometer',w:48,h:52,
-  pins:[{id:'VCC',x:6,y:52,type:'any',label:'VCC'},{id:'SIG',x:24,y:52,type:'any',label:'SIG'},{id:'GND',x:42,y:52,type:'any',label:'GND'}],
-  draw(c,S){
-    const val=(c.props.value||512)/1023;const ang=(val*270-135)*Math.PI/180;
-    g.fillStyle='#1a1a1a';g.strokeStyle='#555';g.lineWidth=1.5;g.beginPath();g.arc(24,24,21,0,Math.PI*2);g.fill();g.stroke();
-    g.fillStyle='#888';g.strokeStyle='#aaa';g.lineWidth=1;g.beginPath();g.arc(24,24,13,0,Math.PI*2);g.fill();g.stroke();
-    g.strokeStyle='#222';g.lineWidth=2.5;g.lineCap='round';g.beginPath();g.moveTo(24,24);g.lineTo(24+11*Math.sin(ang),24-11*Math.cos(ang));g.stroke();
-    g.fillStyle='#666';g.beginPath();g.arc(24,24,3,0,Math.PI*2);g.fill();
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[6,46,6,52],[24,46,24,52],[42,46,42,52]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-    g.fillStyle='#777';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText(Math.round(val*100)+'%',24,38);
-  }
-};
-
-D.joystick={label:'Joystick',w:52,h:62,
-  pins:[{id:'GND',x:3,y:62,type:'any',label:'GND'},{id:'VCC',x:13,y:62,type:'any',label:'VCC'},
-        {id:'VRX',x:23,y:62,type:'any',label:'VRX'},{id:'VRY',x:33,y:62,type:'any',label:'VRY'},
-        {id:'SW',x:43,y:62,type:'any',label:'SW'}],
-  draw(c,S){
-    const jx=S.X[c.id+'_jx']||0,jy=S.X[c.id+'_jy']||0,sw=S.X[c.id+'_sw']||false;
-    g.fillStyle='#111';rr(0,8,52,54,4);g.fill();g.strokeStyle='#444';g.lineWidth=1;g.stroke();
-    g.fillStyle='#1a1a1a';g.strokeStyle='#555';g.lineWidth=1;g.beginPath();g.arc(26,34,19,0,Math.PI*2);g.fill();g.stroke();
-    g.strokeStyle='#333';g.lineWidth=1;
-    g.beginPath();g.moveTo(7,34);g.lineTo(45,34);g.stroke();
-    g.beginPath();g.moveTo(26,15);g.lineTo(26,53);g.stroke();
-    const sx=26+jx*8,sy=34+jy*8;
-    g.fillStyle=sw?'#882288':'#666';g.strokeStyle='#999';g.lineWidth=1;g.beginPath();g.arc(sx,sy,9,0,Math.PI*2);g.fill();g.stroke();
-    g.fillStyle='rgba(255,255,255,.12)';g.beginPath();g.arc(sx-2,sy-3,3,0,Math.PI*2);g.fill();
-    g.fillStyle='#777';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('JOYSTICK',26,11);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[3,13,23,33,43].forEach(x=>{g.beginPath();g.moveTo(x,56);g.lineTo(x,62);g.stroke();});
-  }
-};
-
-D.dcmotor={label:'DC Motor',w:52,h:52,
-  pins:[{id:'+',x:14,y:52,type:'any',label:'+'},{id:'-',x:38,y:52,type:'any',label:'−'}],
-  draw(c,S){
-    const va=S.V[c.id+'_+']??0,vb=S.V[c.id+'_-']??0;
-    const diff=va-vb,speed=Math.min(1,Math.abs(diff)/5),dir=diff>=0?1:-1;
-    const angle=S.X[c.id+'_angle']||0;
-    g.fillStyle='#2a2a2a';g.strokeStyle='#666';g.lineWidth=2;g.beginPath();g.arc(26,22,22,0,Math.PI*2);g.fill();g.stroke();
-    g.fillStyle='#111';g.strokeStyle='#444';g.lineWidth=1.5;g.beginPath();g.arc(26,22,14,0,Math.PI*2);g.fill();g.stroke();
-    if(speed>0.05){
-      for(let i=0;i<3;i++){
-        const a=angle+i*(Math.PI*2/3);
-        g.strokeStyle=`rgba(100,180,255,${0.5+speed*0.5})`;g.lineWidth=2.5;g.lineCap='round';
-        g.beginPath();g.moveTo(26+5*Math.cos(a),22+5*Math.sin(a));g.lineTo(26+12*Math.cos(a),22+12*Math.sin(a));g.stroke();
-      }
-    }
-    g.fillStyle=speed>0.05?'#88aaff':'#666';g.font='bold 7px JetBrains Mono,monospace';g.textAlign='center';g.fillText('M',26,25);
-    g.fillStyle='#888';g.font='5px JetBrains Mono,monospace';g.fillText(speed>0.05?Math.round(speed*100)+'%':'0%',26,35);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[14,46,14,52],[38,46,38,52]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-    g.fillStyle='#888';g.font='6px JetBrains Mono,monospace';g.textAlign='center';g.fillText('+',12,50);g.fillText('−',36,50);
-  }
-};
-
-D.servo={label:'Servo SG90',w:56,h:50,
-  pins:[{id:'GND',x:8,y:50,type:'any',label:'GND'},{id:'VCC',x:20,y:50,type:'any',label:'VCC'},{id:'SIG',x:32,y:50,type:'any',label:'SIG'}],
-  draw(c,S){
-    const ang=((S.X[c.id+'_angle']||90)-90)*Math.PI/180;
-    g.fillStyle='#1a1a4a';rr(0,6,56,44,3);g.fill();g.strokeStyle='#4444aa';g.lineWidth=1.5;g.stroke();
-    g.fillStyle='#777';g.strokeStyle='#aaa';g.lineWidth=1;g.beginPath();g.arc(15,16,10,0,Math.PI*2);g.fill();g.stroke();
-    g.fillStyle='#555';g.strokeStyle='#888';g.beginPath();g.arc(15,16,5,0,Math.PI*2);g.fill();g.stroke();
-    g.strokeStyle='#ccc';g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(15,16);g.lineTo(15+14*Math.sin(ang),16-14*Math.cos(ang));g.stroke();
-    g.fillStyle='#88aaff';g.font='6px JetBrains Mono,monospace';g.textAlign='center';g.fillText('SG90',40,26);g.fillText((S.X[c.id+'_angle']||90)+'°',40,36);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[8,46,8,50],[20,46,20,50],[32,46,32,50]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.buzzer={label:'Buzzer',w:30,h:38,
-  pins:[{id:'+',x:8,y:38,type:'any',label:'+'},{id:'-',x:22,y:38,type:'any',label:'−'}],
-  draw(c,S){
-    const va=S.V[c.id+'_+']??0,vb=S.V[c.id+'_-']??0,on=(va-vb)>1;
-    if(on){g.shadowColor='#ffff44';g.shadowBlur=10;}
-    g.fillStyle='#111';g.strokeStyle=on?'#ffff44':'#555';g.lineWidth=1.5;g.beginPath();g.arc(15,15,13,0,Math.PI*2);g.fill();g.stroke();
-    g.shadowBlur=0;
-    g.fillStyle='#222';g.strokeStyle='#444';g.lineWidth=1;g.beginPath();g.arc(15,15,7,0,Math.PI*2);g.fill();g.stroke();
-    if(on){g.strokeStyle='rgba(255,255,100,.25)';g.lineWidth=2;[17,21,25].forEach(r=>{g.beginPath();g.arc(15,15,r,0,Math.PI*2);g.stroke();});}
-    g.fillStyle=on?'#ffff88':'#888';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('BZ',15,17);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[8,30,8,38],[22,30,22,38]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-    g.fillStyle='#888';g.font='6px JetBrains Mono,monospace';g.textAlign='center';g.fillText('+',6,36);g.fillText('−',20,36);
-  }
-};
-
-D.lcd={label:'LCD 16×2',w:120,h:58,
-  pins:[{id:'GND',x:-8,y:12,type:'any',label:'GND'},{id:'VCC',x:-8,y:24,type:'any',label:'VCC'},
-        {id:'SDA',x:-8,y:36,type:'any',label:'SDA'},{id:'SCL',x:-8,y:48,type:'any',label:'SCL'}],
-  draw(c,S){
-    const l1=S.X[c.id+'_l1']||'',l2=S.X[c.id+'_l2']||'';
-    const on=(S.V[c.id+'_VCC']||0)>2.5;
-    g.fillStyle='#3a5a3a';rr(0,0,120,58,3);g.fill();g.strokeStyle='#2a4a2a';g.lineWidth=1.5;g.stroke();
-    g.fillStyle=on?'#7aad7a':'#2a4a2a';rr(5,5,110,48,2);g.fill();g.strokeStyle='#5a8a5a';g.lineWidth=.7;g.stroke();
-    if(on){g.fillStyle='#1a3a1a';g.font='7px JetBrains Mono,monospace';g.textAlign='left';g.fillText(l1.slice(0,16),8,18);g.fillText(l2.slice(0,16),8,36);}
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[12,24,36,48].forEach(y=>{g.beginPath();g.moveTo(0,y);g.lineTo(-8,y);g.stroke();});
-  }
-};
-
-D.dht22={label:'DHT22',w:34,h:50,
-  pins:[{id:'VCC',x:5,y:50,type:'any',label:'VCC'},{id:'DATA',x:17,y:50,type:'any',label:'DATA'},{id:'GND',x:29,y:50,type:'any',label:'GND'}],
-  draw(c,S){
-    g.fillStyle='#0a2a4a';rr(0,0,34,42,3);g.fill();g.strokeStyle='#0088cc';g.lineWidth=1.5;g.stroke();
-    g.fillStyle='#44aaff';g.font='bold 6px JetBrains Mono,monospace';g.textAlign='center';g.fillText('DHT22',17,13);
-    g.fillStyle='#2288cc';g.font='5px JetBrains Mono,monospace';
-    g.fillText((c.props.temp??22)+'°C',17,26);g.fillText((c.props.hum??65)+'%RH',17,36);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[5,42,5,50],[17,42,17,50],[29,42,29,50]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.ultrasonic={label:'HC-SR04',w:78,h:42,
-  pins:[{id:'VCC',x:8,y:42,type:'any',label:'VCC'},{id:'TRIG',x:24,y:42,type:'any',label:'TRIG'},
-        {id:'ECHO',x:40,y:42,type:'any',label:'ECHO'},{id:'GND',x:56,y:42,type:'any',label:'GND'}],
-  draw(c,S){
-    g.fillStyle='#1a1a3a';rr(0,0,78,36,3);g.fill();g.strokeStyle='#4444aa';g.lineWidth=1.5;g.stroke();
-    [[16,18],[62,18]].forEach(([cx2,cy2])=>{
-      g.fillStyle='#222';g.strokeStyle='#4444aa';g.lineWidth=1.5;g.beginPath();g.arc(cx2,cy2,11,0,Math.PI*2);g.fill();g.stroke();
-      g.fillStyle='#111';g.strokeStyle='#555';g.lineWidth=1;g.beginPath();g.arc(cx2,cy2,5,0,Math.PI*2);g.fill();g.stroke();
-    });
-    g.fillStyle='#8888ff';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('HC-SR04',39,9);g.fillText((c.props.dist||20)+'cm',39,22);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[8,36,8,42],[24,36,24,42],[40,36,40,42],[56,36,56,42]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.pir={label:'PIR Sensor',w:40,h:52,
-  pins:[{id:'VCC',x:8,y:52,type:'any',label:'VCC'},{id:'OUT',x:20,y:52,type:'any',label:'OUT'},{id:'GND',x:32,y:52,type:'any',label:'GND'}],
-  draw(c,S){
-    const mot=S.X[c.id+'_motion']||false;
-    g.fillStyle='#2a1a0a';rr(0,12,40,40,3);g.fill();g.strokeStyle='#aa6600';g.lineWidth=1.5;g.stroke();
-    if(mot){g.shadowColor='#ffdd88';g.shadowBlur=8;}
-    g.fillStyle=mot?'#ffdd88':'#ddcc88';g.strokeStyle='#aa8800';g.lineWidth=1.5;g.beginPath();g.arc(20,12,16,0,Math.PI*2);g.fill();g.stroke();
-    g.shadowBlur=0;
-    g.fillStyle=mot?'#ffcc44':'#ccaa66';g.strokeStyle='#aa8800';g.lineWidth=1;g.beginPath();g.arc(20,12,8,0,Math.PI*2);g.fill();g.stroke();
-    g.fillStyle='#774400';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('PIR',20,28);g.fillText(mot?'MOTION!':'idle',20,38);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[8,46,8,52],[20,46,20,52],[32,46,32,52]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.cap={label:'Condensator',w:22,h:44,
-  pins:[{id:'+',x:7,y:44,type:'any',label:'+'},{id:'-',x:15,y:44,type:'any',label:'−'}],
-  draw(c,S){
-    g.fillStyle='#886600';rr(2,0,18,30,7);g.fill();g.strokeStyle='#cc9900';g.lineWidth=1.5;g.stroke();
-    g.fillStyle='#331100';g.font='bold 5px JetBrains Mono,monospace';g.textAlign='center';g.fillText((c.props.value||10)+'µF',11,11);
-    g.fillStyle='#221100';g.font='8px JetBrains Mono,monospace';g.fillText('+',3,24);
-    g.strokeStyle='#bbb';g.lineWidth=1.5;[[7,30,7,44],[15,30,15,44]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.diode={label:'Diode 1N4007',w:54,h:18,
-  pins:[{id:'A',x:0,y:9,type:'any',label:'A'},{id:'K',x:54,y:9,type:'any',label:'K'}],
-  draw(c,S){
-    g.strokeStyle='#bbb';g.lineWidth=1.5;g.lineCap='round';
-    g.beginPath();g.moveTo(0,9);g.lineTo(14,9);g.stroke();g.beginPath();g.moveTo(40,9);g.lineTo(54,9);g.stroke();
-    g.fillStyle='#222';rr(14,3,26,12,2);g.fill();g.strokeStyle='#888';g.lineWidth=.8;g.stroke();
-    g.fillStyle='#555';g.beginPath();g.moveTo(14,3);g.lineTo(36,9);g.lineTo(14,15);g.closePath();g.fill();
-    g.strokeStyle='#bbb';g.lineWidth=1.5;g.beginPath();g.moveTo(40,3);g.lineTo(40,15);g.stroke();
-    g.fillStyle='#aaa';g.font='4.5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('1N4007',27,9);
-  }
-};
-
-D.npn={label:'NPN 2N2222',w:30,h:44,
-  pins:[{id:'B',x:0,y:18,type:'any',label:'B'},{id:'C',x:15,y:0,type:'any',label:'C'},{id:'E',x:15,y:44,type:'any',label:'E'}],
-  draw(c,S){
-    g.fillStyle='#111';g.strokeStyle='#555';g.lineWidth=1.5;g.beginPath();g.arc(15,20,12,0,Math.PI*2);g.fill();g.stroke();
-    g.strokeStyle='#bbb';g.lineWidth=2;
-    g.beginPath();g.moveTo(0,18);g.lineTo(9,18);g.stroke();
-    g.beginPath();g.moveTo(9,8);g.lineTo(9,28);g.stroke();
-    g.beginPath();g.moveTo(9,12);g.lineTo(15,0);g.stroke();
-    g.beginPath();g.moveTo(9,24);g.lineTo(15,44);g.stroke();
-    g.fillStyle='#888';g.font='5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('NPN',15,22);
-  }
-};
-
-D.vcc5={label:'+5V VCC',w:24,h:30,
-  pins:[{id:'VCC',x:12,y:30,type:'power',voltage:5,label:'+5V'}],
-  draw(c,S){
-    g.fillStyle='#ff4444';g.beginPath();g.moveTo(12,0);g.lineTo(2,16);g.lineTo(22,16);g.closePath();g.fill();
-    g.strokeStyle='#aa0000';g.lineWidth=1;g.stroke();
-    g.fillStyle='#fff';g.font='bold 5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('+5V',12,12);
-    g.strokeStyle='#ff4444';g.lineWidth=1.5;g.beginPath();g.moveTo(12,16);g.lineTo(12,30);g.stroke();
-  }
-};
-
-D.vcc33={label:'+3.3V VCC',w:28,h:30,
-  pins:[{id:'VCC',x:14,y:30,type:'power',voltage:3.3,label:'+3.3V'}],
-  draw(c,S){
-    g.fillStyle='#ff8800';g.beginPath();g.moveTo(14,0);g.lineTo(2,16);g.lineTo(26,16);g.closePath();g.fill();
-    g.strokeStyle='#aa4400';g.lineWidth=1;g.stroke();
-    g.fillStyle='#fff';g.font='bold 5px JetBrains Mono,monospace';g.textAlign='center';g.fillText('3.3V',14,12);
-    g.strokeStyle='#ff8800';g.lineWidth=1.5;g.beginPath();g.moveTo(14,16);g.lineTo(14,30);g.stroke();
-  }
-};
-
-D.gnd={label:'GND',w:22,h:26,
-  pins:[{id:'GND',x:11,y:0,type:'gnd',label:'GND'}],
-  draw(c,S){
-    g.strokeStyle='#888';g.lineWidth=1.5;g.beginPath();g.moveTo(11,0);g.lineTo(11,10);g.stroke();
-    [[2,10,20,10],[5,14,17,14],[8,18,14,18]].forEach(([x1,y1,x2,y2])=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();});
-  }
-};
-
-D.bb={label:'Breadboard',w:290,h:110,pins:[],
-  draw(c,S){
-    g.fillStyle='#ede8d5';rr(0,0,290,110,4);g.fill();g.strokeStyle='#ccc';g.lineWidth=1;g.stroke();
-    const rail=(y,fc,sc)=>{g.fillStyle=fc;rr(5,y,280,9,2);g.fill();g.strokeStyle=sc;g.lineWidth=.5;g.stroke();for(let i=0;i<29;i++){g.fillStyle=fc.replace('e','c');g.strokeStyle=sc;g.lineWidth=.5;g.beginPath();g.arc(12+i*9,y+4,2.2,0,Math.PI*2);g.fill();g.stroke();}};
-    rail(10,'#ffe0e0','#ffaaaa');rail(22,'#e0e0ff','#aaaaff');
-    for(let row=0;row<10;row++){const gy=row<5?36+row*9:66+row*9;for(let col=0;col<29;col++){g.fillStyle='#ddd';g.strokeStyle='#bbb';g.lineWidth=.5;g.beginPath();g.arc(12+col*9,gy,2.2,0,Math.PI*2);g.fill();g.stroke();}}
-    rail(90,'#e0e0ff','#aaaaff');rail(102,'#ffe0e0','#ffaaaa');
-    g.fillStyle='#999';g.font='6px JetBrains Mono,monospace';g.textAlign='left';g.fillText('BREADBOARD 400pts',8,9);
-  }
-};
-
-// ════════════════════════════════════════════════════════
-// SIMULATION STATE
-// S.V = net voltages {compId_pinId: voltage}
-// S.X = extra state {motorAngle, servoAngle, lcdText, etc.}
-// S.M = pin modes {compId_pinId: 'output'|'input'|'input_pullup'}
-// ════════════════════════════════════════════════════════
-const S={V:{},X:{},M:{},running:false,timer:null,loopMs:100,t0:0};
-let serialBuf=[];
-
-// ════════════════════════════════════════════════════════
-// NET SOLVER — Core physics engine
-// Power pins always carry voltage. Wires propagate it.
-// ════════════════════════════════════════════════════════
-function solveNet(){
-  const V={};
-  // 1. Seed all fixed voltage sources (power/gnd pins — always on)
-  comps.forEach(c=>{
-    const def=D[c.type];if(!def)return;
-    def.pins.forEach(p=>{
-      if(p.type==='power') V[c.id+'_'+p.id]=p.voltage||5;
-      else if(p.type==='gnd') V[c.id+'_'+p.id]=0;
-    });
-  });
-  // 2. Apply arduino output pins
-  Object.entries(S.M).forEach(([k,mode])=>{if(mode==='output'&&S.V[k]!==undefined)V[k]=S.V[k];});
-  // Input pullup: unconnected = 5V
-  Object.entries(S.M).forEach(([k,mode])=>{
-    if(mode==='input_pullup'&&V[k]===undefined)V[k]=5;
-  });
-  // 3. Propagate through wires (15 passes to handle chains)
-  for(let pass=0;pass<15;pass++){
-    let changed=false;
-    wires.forEach(w=>{
-      const v1=V[w.a]??null,v2=V[w.b]??null;
-      if(v1!==null&&(v2===null||v1>v2)){if(V[w.b]!==v1){V[w.b]=v1;changed=true;}}
-      else if(v2!==null&&(v1===null||v2>v1)){if(V[w.a]!==v2){V[w.a]=v2;changed=true;}}
-    });
-    if(!changed)break;
-  }
-  // 4. Special: button bridges pins when pressed
-  comps.filter(c=>c.type==='button'&&S.X[c.id+'_pressed']).forEach(c=>{
-    // Bridge 1-2 and 3-4 when pressed: find connected voltages
-    let bestV=null;
-    ['1','2','3','4'].forEach(pid=>{const v=V[c.id+'_'+pid];if(v!==undefined&&v>0&&(bestV===null||v>bestV))bestV=v;});
-    if(bestV!==null)['1','2','3','4'].forEach(pid=>{V[c.id+'_'+pid]=bestV;});
-  });
-  // 5. Potentiometer wiper
-  comps.filter(c=>c.type==='pot').forEach(c=>{
-    const vcc=V[c.id+'_VCC']??0,gnd=V[c.id+'_GND']??0;
-    V[c.id+'_SIG']=gnd+(vcc-gnd)*((c.props.value||512)/1023);
-  });
-  // 6. Joystick axes
-  comps.filter(c=>c.type==='joystick').forEach(c=>{
-    const vcc=V[c.id+'_VCC']??5,gnd=V[c.id+'_GND']??0;
-    const jx=S.X[c.id+'_jx']||0,jy=S.X[c.id+'_jy']||0;
-    V[c.id+'_VRX']=gnd+(vcc-gnd)*((jx+1)/2);
-    V[c.id+'_VRY']=gnd+(vcc-gnd)*((jy+1)/2);
-    V[c.id+'_SW']=S.X[c.id+'_sw']?0:vcc;// LOW when pressed
-  });
-  // 7. Re-propagate one more time after specials
-  for(let pass=0;pass<8;pass++){
-    let changed=false;
-    wires.forEach(w=>{
-      const v1=V[w.a]??null,v2=V[w.b]??null;
-      if(v1!==null&&(v2===null||v1>v2)){if(V[w.b]!==v1){V[w.b]=v1;changed=true;}}
-      else if(v2!==null&&(v1===null||v2>v1)){if(V[w.a]!==v2){V[w.a]=v2;changed=true;}}
-    });
-    if(!changed)break;
-  }
-  // Store output pin voltages from M (don't let propagation overwrite arduino outputs)
-  Object.entries(S.M).forEach(([k,mode])=>{if(mode==='output'&&S.V[k]!==undefined)V[k]=S.V[k];});
-  S.V=V;
-}
-
-// ════════════════════════════════════════════════════════
-// DRAW
-// ════════════════════════════════════════════════════════
-const WCOLS={red:'#e53e3e',blue:'#3182ce',green:'#38a169',yellow:'#d69e2e',white:'#dde6f0',black:'#718096',purple:'#e040fb',orange:'#ff6b35'};
-
-function draw(){
-  g.clearRect(0,0,W,H);
-  g.fillStyle='#080d14';g.fillRect(0,0,W,H);
-  // Grid
-  const gs=20*vz,ox=((W/2-vx*vz)%gs+gs)%gs,oy=((H/2-vy*vz)%gs+gs)%gs;
-  g.fillStyle='#131d2a';
-  for(let x=ox;x<W;x+=gs)for(let y=oy;y<H;y+=gs)g.fillRect(x-1,y-1,2,2);
-
-  g.save();
-  g.translate(W/2,H/2);g.scale(vz,vz);g.translate(-vx,-vy);
-
-  // Wires
-  wires.forEach(w=>{
-    const fp=pinWP(w.a),tp=pinWP(w.b);if(!fp||!tp)return;
-    const col=WCOLS[w.color]||'#e53e3e';
-    const va=S.V[w.a]??0,vb=S.V[w.b]??0,live=va>0.1||vb>0.1;
-    if(live){g.shadowColor=col;g.shadowBlur=3/vz;}
-    g.strokeStyle=live?col:col+'44';g.lineWidth=live?2/vz:1.5/vz;g.lineCap='round';
-    g.beginPath();g.moveTo(fp.x,fp.y);
-    const mx=(fp.x+tp.x)/2;g.bezierCurveTo(mx,fp.y,mx,tp.y,tp.x,tp.y);
-    g.stroke();g.shadowBlur=0;
-    [fp,tp].forEach(p=>{g.fillStyle=live?col:col+'44';g.beginPath();g.arc(p.x,p.y,2.2/vz,0,Math.PI*2);g.fill();});
-  });
-
-  // Wire in progress
-  if(drawWire){
-    const fp=pinWP(drawWire.key);if(fp){
-      g.strokeStyle=WCOLS[wireCol];g.lineWidth=1.5/vz;g.setLineDash([6/vz,4/vz]);
-      g.beginPath();g.moveTo(fp.x,fp.y);g.lineTo(mw.x,mw.y);g.stroke();g.setLineDash([]);
-    }
-  }
-
-  // Components
-  comps.forEach(c=>{
-    const def=D[c.type];if(!def)return;
-    g.save();g.translate(c.wx,c.wy);
-    if(c.rot){g.translate(def.w/2,def.h/2);g.rotate(c.rot*Math.PI/180);g.translate(-def.w/2,-def.h/2);}
-    def.draw(c,S);
-    // Pins
-    def.pins.forEach(p=>{
-      const k=c.id+'_'+p.id,v=S.V[k]??null;
-      const live=v!==null&&v>0.1;
-      const col=pCol(p.type,p.voltage,v);
-      const r=3/vz;
-      if(live){g.shadowColor=col;g.shadowBlur=4/vz;}
-      g.fillStyle=col;g.strokeStyle=live?'rgba(255,255,255,.35)':'#2a3a4a';g.lineWidth=.6/vz;
-      g.beginPath();g.arc(p.x,p.y,r,0,Math.PI*2);g.fill();g.stroke();g.shadowBlur=0;
-      if(vz>0.5){
-        g.fillStyle=live?'#d0e8f8':'#3a5570';
-        g.font=`${Math.max(4,4.5/vz)}px JetBrains Mono,monospace`;
-        const left=p.x<def.w/2;g.textAlign=left?'right':'left';
-        g.fillText(v!==null?v.toFixed(1)+'V':p.label,p.x+(left?-5:5),p.y+1.5);
-      }
-    });
-    if(sel===c.id){
-      g.strokeStyle='#0099ff';g.lineWidth=1.5/vz;g.setLineDash([5/vz,3/vz]);
-      rr(-5,-5,def.w+10,def.h+10,8);g.stroke();g.setLineDash([]);
-    }
-    g.restore();
-  });
-  g.restore();
-}
-
-function pCol(type,voltage,v){
-  if(type==='power')return voltage>=4.5?'#ff5555':voltage>=3?'#ff8800':'#ffcc00';
-  if(type==='gnd')return '#446688';
-  if(v===null)return '#334455';
-  if(v>3.5)return '#ffd700';if(v>0.1)return '#88cc44';return '#334455';
-}
-
-// ════════════════════════════════════════════════════════
-// PIN WORLD POSITION
-// ════════════════════════════════════════════════════════
-function pinWP(key){
-  const us=key.lastIndexOf('_');if(us<0)return null;
-  const cid=key.substring(0,us),pid=key.substring(us+1);
-  const c=comps.find(x=>x.id===cid);if(!c)return null;
-  const def=D[c.type];if(!def)return null;
-  const p=def.pins.find(x=>x.id===pid);if(!p)return null;
-  if(!c.rot)return{x:c.wx+p.x,y:c.wy+p.y};
-  const cx=c.wx+def.w/2,cy=c.wy+def.h/2,rad=c.rot*Math.PI/180,dx=p.x-def.w/2,dy=p.y-def.h/2;
-  return{x:cx+dx*Math.cos(rad)-dy*Math.sin(rad),y:cy+dx*Math.sin(rad)+dy*Math.cos(rad)};
-}
-
-function getPinAt(sx,sy,thr=12){
-  for(const c of comps){const def=D[c.type];if(!def)continue;for(const p of def.pins){const wp=pinWP(c.id+'_'+p.id);if(!wp)continue;const sc=ws(wp.x,wp.y);if(Math.hypot(sc.x-sx,sc.y-sy)<thr)return c.id+'_'+p.id;}}
-  return null;
-}
-function getCompAt(sx,sy){
-  for(let i=comps.length-1;i>=0;i--){const c=comps[i];const def=D[c.type];if(!def)continue;const p=sw(sx,sy);if(p.x>=c.wx-6&&p.x<=c.wx+def.w+6&&p.y>=c.wy-6&&p.y<=c.wy+def.h+6)return c;}
-  return null;
-}
-
-// ════════════════════════════════════════════════════════
-// STATE & INTERACTIONS
-// ════════════════════════════════════════════════════════
-let comps=[],wires=[],sel=null,nid=1,tool='sel',wireCol='red',drawWire=null,mw={x:0,y:0};
-let panSt=null,dragC=null,dragOff={x:0,y:0},spaceDown=false;
-
-cv.addEventListener('mousedown',e=>{
-  const rect=cvw.getBoundingClientRect();
-  const sx=e.clientX-rect.left,sy=e.clientY-rect.top;
-  mw=sw(sx,sy);
-  if(e.button===1||(spaceDown&&e.button===0)||tool==='pan'){panSt={sx,sy,vx,vy};cv.style.cursor='grabbing';return;}
-  if(tool==='wire'){const pk=getPinAt(sx,sy);if(pk)drawWire={key:pk};return;}
-  if(tool==='del'){
-    const wp=sw(sx,sy);const wi=wires.findIndex(w=>wNear(w,wp,8/vz));
-    if(wi>=0){wires.splice(wi,1);solveNet();draw();updSb();return;}
-    const c=getCompAt(sx,sy);if(c)delComp(c.id);return;
-  }
-  if(tool==='sel'){
-    const c=getCompAt(sx,sy);
-    if(c){
-      // Button click
-      if(c.type==='button'){const wp=sw(sx,sy);if(Math.hypot(wp.x-c.wx-18,wp.y-c.wy-18)<12){S.X[c.id+'_pressed']=true;solveNet();draw();}}
-      // PIR click = toggle motion
-      if(c.type==='pir'){S.X[c.id+'_motion']=!S.X[c.id+'_motion'];solveNet();draw();}
-      sel=c.id;dragC=c;dragOff={x:mw.x-c.wx,y:mw.y-c.wy};showProps(c.id);draw();
-    } else {sel=null;draw();document.getElementById('pi').innerHTML='<div class="nosel">⚙<br>Selecteer een component</div>';}
-  }
-});
-
-cv.addEventListener('mousemove',e=>{
-  const rect=cvw.getBoundingClientRect();
-  const sx=e.clientX-rect.left,sy=e.clientY-rect.top;
-  mw=sw(sx,sy);
-  document.getElementById('sbpos').textContent=`${Math.round(mw.x)}, ${Math.round(mw.y)}`;
-  if(panSt){const dx=(sx-panSt.sx)/vz,dy=(sy-panSt.sy)/vz;vx=panSt.vx-dx;vy=panSt.vy-dy;draw();return;}
-  if(dragC&&tool==='sel'){
-    // Joystick: move stick
-    if(dragC.type==='joystick'){const cx=dragC.wx+26,cy=dragC.wy+34;S.X[dragC.id+'_jx']=Math.max(-1,Math.min(1,(mw.x-cx)/14));S.X[dragC.id+'_jy']=Math.max(-1,Math.min(1,(mw.y-cy)/14));solveNet();}
-    // Pot: drag to rotate
-    else if(dragC.type==='pot'){const rel=mw.x-(dragC.wx+24);dragC.props.value=Math.max(0,Math.min(1023,512+rel*18));solveNet();}
-    else{dragC.wx=mw.x-dragOff.x;dragC.wy=mw.y-dragOff.y;solveNet();}
-    draw();return;
-  }
-  if(drawWire){draw();return;}
-});
-
-cv.addEventListener('mouseup',e=>{
-  const rect=cvw.getBoundingClientRect();
-  const sx=e.clientX-rect.left,sy=e.clientY-rect.top;
-  panSt=null;cv.style.cursor='default';
-  if(dragC?.type==='button'){S.X[dragC.id+'_pressed']=false;solveNet();draw();}
-  if(dragC?.type==='joystick'){S.X[dragC.id+'_jx']=0;S.X[dragC.id+'_jy']=0;solveNet();draw();}
-  dragC=null;
-  if(drawWire){
-    const pk=getPinAt(sx,sy);
-    if(pk&&pk!==drawWire.key&&pk.split('_')[0]!==drawWire.key.split('_')[0])addWire(drawWire.key,pk);
-    drawWire=null;draw();
-  }
-});
-
-cv.addEventListener('contextmenu',e=>{
-  e.preventDefault();const rect=cvw.getBoundingClientRect();
-  const c=getCompAt(e.clientX-rect.left,e.clientY-rect.top);
-  if(c){sel=c.id;draw();showCtxMenu(e.clientX,e.clientY);}
-});
-
-cv.addEventListener('wheel',e=>{
-  e.preventDefault();const rect=cvw.getBoundingClientRect();
-  doZoom(e.deltaY>0?0.88:1.136,e.clientX-rect.left,e.clientY-rect.top);
-},{passive:false});
-
-document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
-  if(e.key===' '){spaceDown=true;cv.style.cursor='grab';e.preventDefault();}
-  if(e.key==='s'||e.key==='S')setTool('sel');
-  if(e.key==='w'||e.key==='W')setTool('wire');
-  if(e.key==='x'||e.key==='X')setTool('del');
-  if(e.key==='Escape'){drawWire=null;setTool('sel');}
-  if((e.key==='Delete'||e.key==='Backspace')&&sel)delComp(sel);
-  if(e.key==='r'&&sel)rotComp(sel);
-  if(e.ctrlKey&&e.key==='s'){e.preventDefault();saveProj();}
-  if(e.key==='F5'){e.preventDefault();toggleRun();}
-});
-document.addEventListener('keyup',e=>{if(e.key===' '){spaceDown=false;cv.style.cursor='default';}});
-
-// ════════════════════════════════════════════════════════
-// COMPONENT MANAGEMENT
-// ════════════════════════════════════════════════════════
-function addComp(type,wx,wy){
-  const def=D[type];if(!def)return null;
-  const id='c'+nid++;
-  const c={id,type,wx:wx||0,wy:wy||0,rot:0,props:{resistance:220,value:512,angle:90,temp:22,hum:65,dist:20}};
-  comps.push(c);
-  def.pins.forEach(p=>{if(p.type==='power')S.V[id+'_'+p.id]=p.voltage||5;else if(p.type==='gnd')S.V[id+'_'+p.id]=0;});
-  solveNet();draw();updSb();return c;
-}
-function delComp(id){
-  comps=comps.filter(c=>c.id!==id);
-  wires=wires.filter(w=>!w.a.startsWith(id+'_')&&!w.b.startsWith(id+'_'));
-  Object.keys(S.V).filter(k=>k.startsWith(id+'_')).forEach(k=>delete S.V[k]);
-  Object.keys(S.X).filter(k=>k.startsWith(id+'_')).forEach(k=>delete S.X[k]);
-  Object.keys(S.M).filter(k=>k.startsWith(id+'_')).forEach(k=>delete S.M[k]);
-  if(sel===id){sel=null;document.getElementById('pi').innerHTML='<div class="nosel">⚙<br>Selecteer een component</div>';}
-  solveNet();draw();updSb();
-}
-function addWire(a,b){
-  if(wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))return;
-  wires.push({id:'w'+nid++,a,b,color:wireCol});solveNet();draw();updSb();
-}
-function rotComp(id){const c=comps.find(x=>x.id===id);if(c){c.rot=(c.rot+90)%360;solveNet();draw();}}
-function isArdu(type){return['uno','nano','mega','esp32','esp8266'].includes(type);}
-function wNear(w,pos,thr){const fp=pinWP(w.a),tp=pinWP(w.b);if(!fp||!tp)return false;const dx=tp.x-fp.x,dy=tp.y-fp.y,len=Math.hypot(dx,dy);if(len<1)return false;const t=Math.max(0,Math.min(1,((pos.x-fp.x)*dx+(pos.y-fp.y)*dy)/(len*len)));return Math.hypot(pos.x-fp.x-t*dx,pos.y-fp.y-t*dy)<thr;}
-
-document.querySelectorAll('.ci[draggable]').forEach(el=>{el.addEventListener('dragstart',e=>e.dataTransfer.setData('ctype',el.dataset.t));});
-cvw.addEventListener('dragover',e=>e.preventDefault());
-cvw.addEventListener('drop',e=>{
-  e.preventDefault();const type=e.dataTransfer.getData('ctype');if(!type)return;
-  const def=D[type];if(!def)return;const rect=cvw.getBoundingClientRect();
-  const wp=sw(e.clientX-rect.left,e.clientY-rect.top);
-  addComp(type,wp.x-def.w/2,wp.y-def.h/2);
-});
-
-// ════════════════════════════════════════════════════════
-// ANIMATION LOOP (motors, etc. always animate based on voltage)
-// ════════════════════════════════════════════════════════
-setInterval(()=>{
-  comps.filter(c=>c.type==='dcmotor').forEach(c=>{
-    const va=S.V[c.id+'_+']??0,vb=S.V[c.id+'_-']??0;
-    const speed=Math.min(1,Math.abs(va-vb)/5),dir=va>=vb?1:-1;
-    if(speed>0.02)S.X[c.id+'_angle']=(S.X[c.id+'_angle']||0)+dir*speed*0.14;
-  });
-  solveNet();draw();
-},50);
-
-// ════════════════════════════════════════════════════════
-// SIMULATION ENGINE — Arduino C++ → JS
-// ════════════════════════════════════════════════════════
-function toggleRun(){S.running?stopSim():startSim();}
-
-function startSim(){
-  S.running=true;S.t0=Date.now();S.loopMs=100;
-  document.getElementById('runbtn').style.display='none';
-  document.getElementById('stopbtn').style.display='';
-  document.getElementById('sdot').classList.add('on');
-  document.getElementById('slbl').textContent='Actief';
-  rtab(1);slog('=== Simulatie gestart ===','sys');
-  try{runCode(document.getElementById('code').value);}
-  catch(e){slog('Fout: '+e.message,'err');stopSim();}
-}
-
-function stopSim(){
-  S.running=false;
-  if(S.timer){clearInterval(S.timer);S.timer=null;}
-  document.getElementById('runbtn').style.display='';
-  document.getElementById('stopbtn').style.display='none';
-  document.getElementById('sdot').classList.remove('on');
-  document.getElementById('slbl').textContent='Gestopt';
-  slog('=== Gestopt ===','sys');
-  // Reset output pins
-  comps.filter(c=>isArdu(c.type)).forEach(c=>{
-    D[c.type].pins.filter(p=>p.type==='digital'||p.type==='pwm').forEach(p=>{
-      const k=c.id+'_'+p.id;delete S.V[k];S.M[k]='input';
-    });
-  });
-  solveNet();draw();
-}
-
-function getArdu(){return comps.find(c=>isArdu(c.type));}
-
-function arduPinKey(pin){
-  const ard=getArdu();if(!ard)return null;
-  for(const p of D[ard.type].pins){if(p.id==='D'+pin||p.id==='IO'+pin)return ard.id+'_'+p.id;}
-  return null;
-}
-function arduAnalogKey(pin){
-  const ard=getArdu();if(!ard)return null;
-  const rp=pin>=14?pin-14:pin;
-  for(const p of D[ard.type].pins){if(p.id==='A'+rp)return ard.id+'_'+p.id;}
-  return null;
-}
-
-function runCode(src){
-  let js=src
-    .replace(/\/\/[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'')
-    .replace(/#include[^\n]*/g,'').replace(/#define\s+(\w+)\s+([\S ]+)/gm,'const $1=$2;')
-    .replace(/\bSerial\.begin\b/g,'__sbeg').replace(/\bSerial\.println\b/g,'__spln')
-    .replace(/\bSerial\.print\b/g,'__spr').replace(/\bSerial\.available\b/g,'__savail')
-    .replace(/\bSerial\.read\b/g,'__sread').replace(/\bSerial\.readString\b/g,'__sreadstr')
-    .replace(/\bdigitalWrite\b/g,'__dw').replace(/\bdigitalRead\b/g,'__dr')
-    .replace(/\banalogWrite\b/g,'__aw').replace(/\banalogRead\b/g,'__ar')
-    .replace(/\bpinMode\b/g,'__pm').replace(/\bdelay\b/g,'__dly')
-    .replace(/\bdelayMicroseconds\b/g,'__dlyu').replace(/\bmillis\(\)/g,'__ms()')
-    .replace(/\bmicros\(\)/g,'(__ms()*1000)')
-    .replace(/\bmap\(/g,'__map(').replace(/\bconstrain\(/g,'__clamp(').replace(/\brandom\(/g,'__rnd(')
-    .replace(/\blcd\.setCursor\(/g,'__lcdcur(').replace(/\blcd\.print\(/g,'__lcdpr(')
-    .replace(/\blcd\.println\(/g,'__lcdpln(').replace(/\blcd\.clear\(\)/g,'__lcdclr()')
-    .replace(/\blcd\.begin\([^)]*\)/g,'0').replace(/\blcd\.backlight\(\)/g,'0')
-    .replace(/\bServo\s+(\w+)\s*;/g,'let $1_satt=null;')
-    .replace(/(\w+)\.attach\s*\((\d+)\)/g,'__svo_at("$1",$2)')
-    .replace(/(\w+)\.write\s*\(/g,'__svo_wr("$1",')
-    .replace(/\bHIGH\b/g,'1').replace(/\bLOW\b/g,'0')
-    .replace(/\bOUTPUT\b/g,'1').replace(/\bINPUT_PULLUP\b/g,'2').replace(/\bINPUT\b/g,'0')
-    .replace(/\b(boolean|bool|byte|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t)\b/g,'let')
-    .replace(/\b(unsigned\s+)?(int|long|float|double|char)\b/g,'let')
-    .replace(/\bString\b/g,'').replace(/\bvoid\b/g,'function')
-    .replace(/\b(abs|pow|sqrt|sin|cos|tan|floor|ceil|round)\s*\(/g,'Math.$1(')
-    .replace(/\bmin\(/g,'Math.min(').replace(/\bmax\(/g,'Math.max(')
-    .replace(/\bA([0-5])\b/g,'(14+$1)');
-
-  const lcd={r:0,c:0,buf:['','']};
-  const svo={};// name→pin
-
-  const api={
-    __sbeg:()=>slog('Serial.begin() klaar','sys'),
-    __spln:(v='')=>slog(String(v)),
-    __spr:(v='')=>slog(String(v)),
-    __savail:()=>serialBuf.length,
-    __sread:()=>serialBuf.length?serialBuf.shift().charCodeAt(0):-1,
-    __sreadstr:()=>{const s=serialBuf.join('');serialBuf=[];return s;},
-    __dw:(pin,val)=>{const k=arduPinKey(pin);if(!k)return;S.V[k]=val?5:0;S.M[k]='output';solveNet();},
-    __dr:(pin)=>{
-      const k=arduPinKey(pin);if(!k)return 0;
-      if(S.M[k]==='input_pullup'){return(S.V[k]??5)<0.5?0:1;}
-      return(S.V[k]??0)>0.5?1:0;
-    },
-    __aw:(pin,val)=>{
-      const k=arduPinKey(pin);if(!k)return;
-      const v=Math.max(0,Math.min(255,val))/255*5;
-      S.V[k]=v;S.M[k]='output';
-      // Servo angle via PWM value (simplified: 0=0°, 255=180°)
-      const ard=getArdu();if(ard){
-        comps.filter(c=>c.type==='servo').forEach(c=>{
-          if(wires.some(w=>(w.a===ard.id+'_D'+pin&&w.b===c.id+'_SIG')||(w.b===ard.id+'_D'+pin&&w.a===c.id+'_SIG')))
-            S.X[c.id+'_angle']=Math.round(val/255*180);
+        // Maak motorknoppen
+        const motorSelect = document.getElementById('motorSelect');
+        Object.keys(motors).forEach(key => {
+            const btn = document.createElement('button');
+            btn.className = 'motor-btn';
+            btn.textContent = motors[key].name;
+            btn.onclick = () => selectMotor(key);
+            motorSelect.appendChild(btn);
         });
-      }
-      solveNet();
-    },
-    __ar:(pin)=>{const k=arduAnalogKey(pin);return k?Math.round(((S.V[k]??0)/5)*1023):0;},
-    __pm:(pin,mode)=>{const k=arduPinKey(pin);if(!k)return;S.M[k]=mode===1?'output':mode===2?'input_pullup':'input';if(mode===2)S.V[k]=5;},
-    __dly:(ms)=>{S.loopMs=Math.max(16,ms);},
-    __dlyu:(us)=>{S.loopMs=Math.max(16,us/1000);},
-    __ms:()=>Date.now()-S.t0,
-    __map:(v,il,ih,ol,oh)=>ol+(oh-ol)*((v-il)/(ih-il)),
-    __clamp:(v,lo,hi)=>Math.max(lo,Math.min(hi,v)),
-    __rnd:(lo,hi)=>hi===undefined?Math.floor(Math.random()*lo):lo+Math.floor(Math.random()*(hi-lo+1)),
-    __lcdclr:()=>{lcd.buf=['',''];lcd.r=0;lcd.c=0;_updLcd();},
-    __lcdcur:(c,r)=>{lcd.c=c;lcd.r=r;},
-    __lcdpr:(v)=>{const r=Math.min(1,lcd.r);lcd.buf[r]=(lcd.buf[r]+String(v)).slice(0,16);_updLcd();},
-    __lcdpln:(v='')=>{const r=Math.min(1,lcd.r);lcd.buf[r]=(lcd.buf[r]+String(v)).slice(0,16);lcd.r=Math.min(1,lcd.r+1);_updLcd();},
-    __svo_at:(name,pin)=>{svo[name]=pin;},
-    __svo_wr:(name,angle)=>{
-      const pin=svo[name];if(pin===undefined)return;
-      const ard=getArdu();if(!ard)return;
-      comps.filter(c=>c.type==='servo').forEach(c=>{
-        if(wires.some(w=>(w.a===ard.id+'_D'+pin&&w.b===c.id+'_SIG')||(w.b===ard.id+'_D'+pin&&w.a===c.id+'_SIG')))
-          S.X[c.id+'_angle']=Math.max(0,Math.min(180,angle));
-      });
-    },
-    HIGH:1,LOW:0,OUTPUT:1,INPUT:0,INPUT_PULLUP:2,
-    A0:14,A1:15,A2:16,A3:17,A4:18,A5:19,
-    Math,parseInt,parseFloat,String,Number,isNaN,
-  };
-  function _updLcd(){comps.filter(c=>c.type==='lcd').forEach(c=>{S.X[c.id+'_l1']=lcd.buf[0];S.X[c.id+'_l2']=lcd.buf[1];});}
 
-  const keys=Object.keys(api),vals=Object.values(api);
-  const sm=js.match(/function\s+setup\s*\(\s*\)\s*\{([\s\S]*?)(?=\nfunction\s+\w|\nlet\s|\nconst\s|$)/);
-  const lm=js.match(/function\s+loop\s*\(\s*\)\s*\{([\s\S]*?)(?=\nfunction\s+\w|\nlet\s|\nconst\s|$)/);
-  if(!sm||!lm){slog('⚠ setup() of loop() niet gevonden','err');stopSim();return;}
-  // Globals
-  try{const gl=js.split(/function\s+setup\s*\(\)/)[0];if(gl.trim())new Function(...keys,gl)(...vals);}catch(_){}
-  // Setup
-  try{slog('▶ setup()...','sys');new Function(...keys,sm[1])(...vals);slog('✓ setup() klaar','sys');}catch(e){slog('setup() fout: '+e.message,'err');}
-  // Loop
-  S.loopMs=100;let lc=0;
-  S.timer=setInterval(()=>{
-    if(!S.running)return;S.loopMs=100;
-    try{new Function(...keys,lm[1])(...vals);lc++;}
-    catch(e){slog('loop() fout: '+e.message,'err');stopSim();}
-    if(lc>500000){slog('⚠ Loop limiet','err');stopSim();}
-  },S.loopMs);
-}
+        function selectMotor(key) {
+            currentMotor = motors[key];
+            speed = 0;
+            rpm = currentMotor.idleRPM;
+            gear = 0;
+            
+            // Update UI
+            document.querySelectorAll('.motor-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('motorName').textContent = currentMotor.name;
+            document.getElementById('motorSpecs').textContent = 
+                `${currentMotor.cc}cc | ${currentMotor.maxPower} PK | Max: ${currentMotor.maxSpeed} km/h`;
+            
+            updateDisplay();
+        }
 
-// ════════════════════════════════════════════════════════
-// COMPILE CHECK
-// ════════════════════════════════════════════════════════
-function doCompile(){
-  const src=document.getElementById('code').value;
-  rtab(1);slog('🔨 Controleren...','sys');
-  const errs=[];
-  if(!src.match(/void\s+setup\s*\(/))errs.push('❌ Geen setup() gevonden');
-  if(!src.match(/void\s+loop\s*\(/))errs.push('❌ Geen loop() gevonden');
-  let d=0;for(const ch of src){if(ch==='{')d++;else if(ch==='}')d--;}
-  if(d!==0)errs.push(`❌ Accolades niet in balans`);
-  if(errs.length)errs.forEach(e=>slog(e,'err'));
-  else slog(`✅ Code OK — ~${Math.round(src.length/8)} bytes`,'sys');
-}
+        // Toetsenbord besturing
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            if (e.key === 'Shift') {
+                clutch = true;
+                document.getElementById('koppelingIndicator').classList.add('active');
+            }
+            if (e.key === 'w' || e.key === 'W') {
+                throttle = true;
+                document.getElementById('gasIndicator').classList.add('active');
+            }
+            if (e.key === 's' || e.key === 'S') {
+                brake = true;
+                document.getElementById('remIndicator').classList.add('active');
+            }
+            
+            // Schakelen (alleen met koppeling)
+            if (currentMotor && clutch) {
+                if (e.key === 'ArrowUp' && gear < currentMotor.gears) {
+                    gear++;
+                }
+                if (e.key === 'ArrowDown' && gear > 0) {
+                    gear--;
+                }
+            }
+        });
 
-// ════════════════════════════════════════════════════════
-// SERIAL
-// ════════════════════════════════════════════════════════
-function slog(msg,type=''){
-  const out=document.getElementById('sout');
-  const d=document.createElement('div');d.className='sl'+(type?' '+type:'');
-  d.textContent=(type===''?`[${new Date().toLocaleTimeString('nl',{hour12:false})}] `:'')+msg;
-  out.appendChild(d);if(out.children.length>600)out.removeChild(out.firstChild);
-  out.scrollTop=out.scrollHeight;
-}
-function sendSer(){const i=document.getElementById('sin');if(!i.value)return;serialBuf.push(...i.value.split(''));slog('→ '+i.value,'sys');i.value='';}
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            
+            if (e.key === 'Shift') {
+                clutch = false;
+                document.getElementById('koppelingIndicator').classList.remove('active');
+            }
+            if (e.key === 'w' || e.key === 'W') {
+                throttle = false;
+                document.getElementById('gasIndicator').classList.remove('active');
+            }
+            if (e.key === 's' || e.key === 'S') {
+                brake = false;
+                document.getElementById('remIndicator').classList.remove('active');
+            }
+        });
 
-// ════════════════════════════════════════════════════════
-// PROPERTIES
-// ════════════════════════════════════════════════════════
-function showProps(id){
-  const c=comps.find(x=>x.id===id);if(!c)return;
-  const def=D[c.type];if(!def)return;
-  let h=`<div class="psec">Component</div>
-<div class="pr"><span class="pl">ID</span><span style="font-size:9px;color:var(--t3)">${c.id}</span></div>
-<div class="pr"><span class="pl">Type</span><span style="font-size:9px;color:var(--acc)">${def.label}</span></div>
-<div class="pr"><span class="pl">Rotatie</span><select class="psel" onchange="comps.find(x=>x.id==='${id}').rot=+this.value;solveNet();draw()">
-${[0,90,180,270].map(v=>`<option value="${v}"${(c.rot||0)===v?' selected':''}>${v}°</option>`).join('')}</select></div>`;
+        function updatePhysics() {
+            if (!currentMotor) return;
 
-  if(c.type==='res')h+=`<div class="psec">Weerstand</div><div class="pr"><span class="pl">Waarde (Ω)</span><input class="pi2" type="number" value="${c.props.resistance}" onchange="comps.find(x=>x.id==='${id}').props.resistance=+this.value;solveNet();draw()"></div>`;
-  if(c.type==='pot')h+=`<div class="psec">Potentiometer</div><div class="pr"><span class="pl">Waarde</span><input class="pi2" type="range" min="0" max="1023" value="${c.props.value}" oninput="comps.find(x=>x.id==='${id}').props.value=+this.value;solveNet();draw()"></div>`;
-  if(c.type==='servo')h+=`<div class="psec">Servo (handmatig)</div><div class="pr"><span class="pl">Hoek</span><input class="pi2" type="range" min="0" max="180" value="${S.X[id+'_angle']||90}" oninput="S.X['${id}_angle']=+this.value;draw()"></div>`;
-  if(c.type==='lcd')h+=`<div class="psec">LCD Tekst</div><div class="pr"><span class="pl">Regel 1</span><input class="pi2" value="${S.X[id+'_l1']||''}" maxlength="16" oninput="S.X['${id}_l1']=this.value;draw()"></div><div class="pr"><span class="pl">Regel 2</span><input class="pi2" value="${S.X[id+'_l2']||''}" maxlength="16" oninput="S.X['${id}_l2']=this.value;draw()"></div>`;
-  if(c.type==='dht22')h+=`<div class="psec">DHT22 Waarden</div><div class="pr"><span class="pl">Temperatuur °C</span><input class="pi2" type="number" value="${c.props.temp}" onchange="comps.find(x=>x.id==='${id}').props.temp=+this.value;draw()"></div><div class="pr"><span class="pl">Vochtigheid %</span><input class="pi2" type="number" value="${c.props.hum}" onchange="comps.find(x=>x.id==='${id}').props.hum=+this.value;draw()"></div>`;
-  if(c.type==='ultrasonic')h+=`<div class="psec">HC-SR04</div><div class="pr"><span class="pl">Afstand cm</span><input class="pi2" type="number" value="${c.props.dist}" onchange="comps.find(x=>x.id==='${id}').props.dist=+this.value;draw()"></div>`;
-  if(c.type==='cap')h+=`<div class="psec">Condensator</div><div class="pr"><span class="pl">Capaciteit µF</span><input class="pi2" type="number" value="${c.props.value||10}" onchange="comps.find(x=>x.id==='${id}').props.value=+this.value;draw()"></div>`;
+            // Gas geven
+            if (throttle && gear > 0 && !clutch) {
+                const gearRatio = currentMotor.gearRatios[gear - 1];
+                const maxSpeedInGear = currentMotor.maxSpeed * gearRatio;
+                
+                if (speed < maxSpeedInGear) {
+                    const acceleration = currentMotor.acceleration * (1 - speed / maxSpeedInGear);
+                    speed += acceleration * 0.05;
+                    rpm = Math.min(currentMotor.idleRPM + (speed / maxSpeedInGear) * (currentMotor.maxRPM - currentMotor.idleRPM), currentMotor.maxRPM);
+                }
+            }
 
-  h+=`<div class="psec">Live Pin Spanning</div>`;
-  def.pins.forEach(p=>{
-    const k=id+'_'+p.id;const v=S.V[k]??null;
-    const vStr=v!==null?v.toFixed(2)+'V':'--';
-    const col=v===null?'#334455':v>3.5?'#ffd700':v>0.1?'#88cc44':'#446688';
-    h+=`<div class="pr"><span class="pl" style="font-size:9px">${p.id}</span><span style="font-size:9px;color:${col}">${v!==null?(v>0.5?'HIGH':'LOW'):'-'} · ${vStr}</span></div>`;
-  });
-  h+=`<div style="display:flex;gap:5px;margin-top:10px">
-<button class="btn" style="flex:1" onclick="rotComp('${id}');showProps('${id}')">🔄 Draaien</button>
-<button class="btn stop" style="flex:1" onclick="ctx_del()">🗑 Verwijderen</button></div>`;
-  document.getElementById('pi').innerHTML=h;
-}
+            // Remmen
+            if (brake) {
+                speed = Math.max(0, speed - 1.5);
+            }
 
-// ════════════════════════════════════════════════════════
-// UI
-// ════════════════════════════════════════════════════════
-function setTool(t){
-  tool=t;['sel','wire','del','pan'].forEach(id=>document.getElementById('t_'+id)?.classList.toggle('on',id===t));
-  document.getElementById('sbt').textContent={sel:'↖ Selecteren',wire:'〰 Draad',del:'✕ Verwijderen',pan:'✋ Schuiven'}[t]||t;
-  document.getElementById('wcp').classList.toggle('show',t==='wire');
-  if(t!=='wire')drawWire=null;draw();
-}
-function setWC(c){wireCol=c;document.querySelectorAll('.wcb').forEach(b=>b.classList.toggle('on',b.dataset.c===c));}
-function rtab(i){document.querySelectorAll('.rt').forEach((el,j)=>el.classList.toggle('on',j===i));document.querySelectorAll('.rpane').forEach((el,j)=>el.classList.toggle('on',j===i));if(i===2&&sel)showProps(sel);}
-function showCtxMenu(x,y){const m=document.getElementById('ctx');m.style.left=x+'px';m.style.top=y+'px';m.classList.add('show');}
-function hideCtx(){document.getElementById('ctx').classList.remove('show');}
-document.addEventListener('click',e=>{if(!e.target.closest('#ctx'))hideCtx();});
-function ctx_dup(){if(!sel)return;const c=comps.find(x=>x.id===sel);if(c){const nc=addComp(c.type,c.wx+30,c.wy+30);nc.props={...c.props};}hideCtx();}
-function ctx_rot(){if(!sel)return;rotComp(sel);hideCtx();}
-function ctx_del(){if(!sel)return;delComp(sel);sel=null;hideCtx();}
-function updSb(){document.getElementById('sbc').textContent=comps.length+' comp.';document.getElementById('sbw').textContent=wires.length+' draden';document.getElementById('sbz').textContent=Math.round(vz*100)+'%';}
+            // Natuurlijke weerstand
+            if (!throttle || gear === 0 || clutch) {
+                speed = Math.max(0, speed - 0.3);
+            }
 
-// ════════════════════════════════════════════════════════
-// SAVE/LOAD
-// ════════════════════════════════════════════════════════
-function saveProj(){
-  const d={comps:comps.map(c=>({id:c.id,type:c.type,wx:c.wx,wy:c.wy,rot:c.rot||0,props:c.props})),wires,code:document.getElementById('code').value,nid,vx,vy,vz};
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='ardusim-v4.json';a.click();
-  slog('💾 Opgeslagen','sys');
-}
-function loadProj(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{const r=new FileReader();r.onload=ev=>{try{
-    const d=JSON.parse(ev.target.result);clearAll(true);nid=d.nid||1;vx=d.vx||0;vy=d.vy||0;vz=d.vz||1;
-    document.getElementById('code').value=d.code||'';wires=d.wires||[];
-    d.comps.forEach(c=>{const def=D[c.type];if(!def)return;const comp={id:c.id,type:c.type,wx:c.wx,wy:c.wy,rot:c.rot||0,props:{...c.props}};comps.push(comp);def.pins.forEach(p=>{if(p.type==='power')S.V[c.id+'_'+p.id]=p.voltage||5;else if(p.type==='gnd')S.V[c.id+'_'+p.id]=0;});});
-    solveNet();draw();updSb();slog('📂 Geladen: '+d.comps.length+' componenten','sys');
-  }catch(ex){slog('Laad-fout: '+ex.message,'err');}};r.readAsText(e.target.files[0]);};inp.click();
-}
-function newProj(){if(comps.length>0&&!confirm('Nieuw project? Wijzigingen gaan verloren.'))return;clearAll();document.getElementById('code').value=TPLS.blink;}
-function clearAll(silent){if(S.running)stopSim();comps=[];wires=[];sel=null;Object.keys(S.V).forEach(k=>delete S.V[k]);Object.keys(S.X).forEach(k=>delete S.X[k]);Object.keys(S.M).forEach(k=>delete S.M[k]);solveNet();draw();updSb();if(!silent)slog('🗑 Gewist','sys');}
+            // Motor remming in hogere versnellingen
+            if (!throttle && gear > 0 && !clutch) {
+                speed = Math.max(0, speed - 0.6);
+            }
 
-// ════════════════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════════════════
-function rr(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.arcTo(x+w,y,x+w,y+r,r);g.lineTo(x+w,y+h-r);g.arcTo(x+w,y+h,x+w-r,y+h,r);g.lineTo(x+r,y+h);g.arcTo(x,y+h,x,y+h-r,r);g.lineTo(x,y+r);g.arcTo(x,y,x+r,y,r);g.closePath();}
-function resBands(v){const C=['#000','#8B4513','#cc0000','#ff8800','#ffff00','#008800','#0000cc','#aa00ff','#888','#fff'];let r=v,m=0;while(r>=100){r/=10;m++;}r=Math.round(r);return[C[Math.floor(r/10)]||'#888',C[r%10]||'#888',C[m]||'#888','#c8a000'];}
-function fmtR(v){return v>=1e6?(v/1e6).toFixed(1)+'MΩ':v>=1000?(v/1000).toFixed(1)+'kΩ':v+'Ω';}
+            // RPM aanpassen
+            if (gear > 0 && !clutch) {
+                const gearRatio = currentMotor.gearRatios[gear - 1];
+                const targetRPM = currentMotor.idleRPM + (speed / (currentMotor.maxSpeed * gearRatio)) * (currentMotor.maxRPM - currentMotor.idleRPM);
+                rpm = Math.max(currentMotor.idleRPM, Math.min(targetRPM, currentMotor.maxRPM));
+            } else {
+                rpm = Math.max(currentMotor.idleRPM, rpm - 100);
+            }
 
-// ════════════════════════════════════════════════════════
-// TEMPLATES
-// ════════════════════════════════════════════════════════
-const TPLS={
-blink:`// Blink — LED op pin 13
-// Benodigde verbindingen:
-//   D13 → 220Ω weerstand → LED anode (+)
-//   LED kathode (-) → GND
-// (Of verbind 5V direct → LED anode, LED kathode → GND
-//  om de LED altijd aan te zetten zonder code!)
-int led = 13;
+            // Begrens snelheid
+            speed = Math.min(speed, currentMotor.maxSpeed);
 
-void setup() {
-  pinMode(led, OUTPUT);
-  Serial.begin(9600);
-  Serial.println("Blink gestart!");
-}
+            updateDisplay();
+        }
 
-void loop() {
-  digitalWrite(led, HIGH);
-  Serial.println("AAN");
-  delay(1000);
-  digitalWrite(led, LOW);
-  Serial.println("UIT");
-  delay(1000);
-}`,
-knop:`// Drukknop bestuurt LED
-// D2 → knop → GND  (INPUT_PULLUP: ingedrukt = LOW)
-// D13 → 220Ω → LED → GND
-int btn = 2;
-int led = 13;
+        function updateDisplay() {
+            if (!currentMotor) return;
 
-void setup() {
-  pinMode(btn, INPUT_PULLUP);
-  pinMode(led, OUTPUT);
-  Serial.begin(9600);
-}
+            document.getElementById('speedDisplay').textContent = Math.round(speed);
+            document.getElementById('gearDisplay').textContent = gear === 0 ? 'N' : gear;
+            document.getElementById('rpmDisplay').textContent = Math.round(rpm);
+            
+            const currentPower = (rpm / currentMotor.maxRPM) * currentMotor.maxPower;
+            document.getElementById('powerDisplay').textContent = Math.round(currentPower) + ' PK';
 
-void loop() {
-  if (digitalRead(btn) == LOW) {
-    digitalWrite(led, HIGH);
-    Serial.println("Knop ingedrukt - LED AAN");
-  } else {
-    digitalWrite(led, LOW);
-  }
-  delay(50);
-}`,
-pot:`// Potentiometer → LED helderheid
-// Pot SIG → A0,  Pot VCC → 5V,  Pot GND → GND
-// D9 (PWM~) → 220Ω → LED → GND
-int potPin = A0;
-int ledPin = 9;
+            const rpmPercentage = (rpm / currentMotor.maxRPM) * 100;
+            document.getElementById('rpmBar').style.width = rpmPercentage + '%';
+        }
 
-void setup() {
-  Serial.begin(9600);
-}
+        // Game loop
+        setInterval(updatePhysics, 50);
 
-void loop() {
-  int val = analogRead(potPin);
-  int brightness = val / 4;
-  analogWrite(ledPin, brightness);
-  Serial.print("Pot: "); Serial.print(val);
-  Serial.print("  PWM: "); Serial.println(brightness);
-  delay(100);
-}`,
-serial:`// Serieel commando's
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Stuur: aan / uit / blink");
-}
-
-int ledPin = 13;
-bool blinking = false;
-
-void loop() {
-  if (Serial.available() > 0) {
-    String cmd = Serial.readString();
-    cmd.trim();
-    if (cmd == "aan") { digitalWrite(ledPin, HIGH); blinking = false; Serial.println("LED AAN"); }
-    else if (cmd == "uit") { digitalWrite(ledPin, LOW); blinking = false; Serial.println("LED UIT"); }
-    else if (cmd == "blink") { blinking = true; Serial.println("Blinken!"); }
-    else Serial.println("Onbekend: " + cmd);
-  }
-  if (blinking) {
-    digitalWrite(ledPin, HIGH); delay(250);
-    digitalWrite(ledPin, LOW); delay(250);
-  } else delay(50);
-}`,
-servo:`// Servo heen-en-weer
-// Servo GND → GND, Servo VCC → 5V, Servo SIG → D9
-#include <Servo.h>
-Servo myServo;
-
-void setup() {
-  myServo.attach(9);
-  Serial.begin(9600);
-}
-
-void loop() {
-  for (int pos = 0; pos <= 180; pos++) {
-    myServo.write(pos);
-    delay(10);
-  }
-  Serial.println("180° bereikt");
-  for (int pos = 180; pos >= 0; pos--) {
-    myServo.write(pos);
-    delay(10);
-  }
-  Serial.println("0° bereikt");
-}`,
-lcd:`// LCD tekst
-// LCD GND → GND, LCD VCC → 5V, LCD SDA → A4, LCD SCL → A5
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-void setup() {
-  lcd.begin();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("ArduSim v4!");
-}
-
-void loop() {
-  lcd.setCursor(0, 1);
-  lcd.print("Tijd: ");
-  lcd.print(millis() / 1000);
-  lcd.print("s   ");
-  delay(1000);
-}`,
-joy:`// Joystick uitlezen
-// JOY GND → GND, VCC → 5V, VRX → A0, VRY → A1, SW → D2
-int xPin = A0, yPin = A1, swPin = 2;
-
-void setup() {
-  pinMode(swPin, INPUT_PULLUP);
-  Serial.begin(9600);
-  Serial.println("Beweeg de joystick (sleep de knop)");
-}
-
-void loop() {
-  int x = analogRead(xPin);
-  int y = analogRead(yPin);
-  bool pressed = digitalRead(swPin) == LOW;
-  Serial.print("X="); Serial.print(x);
-  Serial.print(" Y="); Serial.print(y);
-  Serial.print(" Knop="); Serial.println(pressed ? "INGEDRUKT" : "los");
-  delay(200);
-}`
-};
-function tpl(n){if(TPLS[n])document.getElementById('code').value=TPLS[n];}
-
-// ════════════════════════════════════════════════════════
-// STARTUP — voorbeeld circuit
-// ════════════════════════════════════════════════════════
-resize();
-setTimeout(()=>{
-  const ard=addComp('uno',-165,-120);
-  const led=addComp('led_r',110,-82);
-  const res=addComp('res',42,-73);
-  const gnd=addComp('gnd',118,48);
-  const v5=addComp('vcc5',-200,80);
-  const led2=addComp('led_g',-180,140);
-  const gnd2=addComp('gnd',-165,200);
-
-  addWire(ard.id+'_D13', res.id+'_1');
-  addWire(res.id+'_2',   led.id+'_A');
-  addWire(led.id+'_K',   gnd.id+'_GND');
-  // Demo: 5V direct op groene LED (altijd aan — geen code nodig!)
-  addWire(v5.id+'_VCC',  led2.id+'_A');
-  addWire(led2.id+'_K',  gnd2.id+'_GND');
-
-  solveNet();draw();
-  slog('🎉 Welkom bij ArduSim v4!','sys');
-  slog('⚡ Groene LED rechts: 5V direct → LED → GND — altijd aan, geen code nodig!','sys');
-  slog('💡 Rode LED: pin 13 → 220Ω → LED → GND — knippert via code','sys');
-  slog('▶ Druk F5 of klik Uitvoeren om de sketch te starten','sys');
-  slog('〰 W = draadmodus, klik pin → pin om te verbinden','sys');
-  slog('🎛 Potentiometer: sleep de knob | Joystick: sleep de stick','sys');
-  slog('🔘 Drukknop: klik de rode cap om in te drukken','sys');
-},150);
-</script>
+        // Selecteer standaard 125cc
+        document.querySelectorAll('.motor-btn')[1].click();
+    </script>
 </body>
 </html>
